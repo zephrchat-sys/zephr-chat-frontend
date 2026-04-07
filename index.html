@@ -502,8 +502,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
     👻 Stranger disconnected — <span class="dc-lnk" onclick="startSearch()">Find new?</span>
   </div>
   <div class="msgs" id="msgs"></div>
+  <input type="file" id="file-input" accept="image/*,video/mp4,.gif" style="display:none" onchange="handleFileSelect(event)">
   <div class="inp-bar">
-    <button class="ia-btn" onclick="sendPhoto()">📎</button>
+    <button class="ia-btn" onclick="triggerFileUpload()">📎</button>
     <div class="inp-wrap">
       <textarea id="msg-i" rows="1" placeholder="Message…"
         oninput="onInp()" onkeydown="onKD(event)"></textarea>
@@ -591,7 +592,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Config ───────────────────────────────────────────────────────────────────
-const BACKEND_URL = window.ZEPHR_BACKEND_URL || 'https://zephr-chat-backend-production.up.railway.app';
+const BACKEND_URL = window.ZEPHR_BACKEND_URL || 'https://zephr-chat-backend.railway.app';
 const WS_URL = BACKEND_URL.replace(/^http/, 'ws');
 
 // ── Telegram WebApp ───────────────────────────────────────────────────────────
@@ -694,7 +695,14 @@ function handleServerMsg(msg) {
     case 'message':
       // Incoming message from peer
       hideT();
-      bubble(msg.text, false, msg.translated || false);
+      if (msg.media_type && msg.media_data) {
+        // Media message
+        const mediaRow = createMediaBubble(msg.media_data, msg.media_type, false);
+        appendMsg(mediaRow);
+      } else {
+        // Text message
+        bubble(msg.text, false, msg.translated || false);
+      }
       showTypingIndicatorReset();
       break;
 
@@ -1051,31 +1059,126 @@ function sendSticker(emoji) {
   wsSend({ type: 'send_message', session_id: currentSessionId, text: emoji });
 }
 
-function sendPhoto() {
-  if (state !== 'chatting') return;
-  // Show scan animation
+function triggerFileUpload() {
+  if (state !== 'chatting') {
+    showToast('⚠️ Start a chat first');
+    return;
+  }
+  document.getElementById('file-input').click();
+}
+
+async function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Reset input
+  event.target.value = '';
+  
+  // Check file size (max 10MB for images, 20MB for videos)
+  const maxSize = file.type.startsWith('video/') ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showToast(`⚠️ File too large (max ${file.type.startsWith('video/') ? '20' : '10'}MB)`);
+    return;
+  }
+  
+  // Show loading indicator
+  const loadingRow = createMediaLoadingBubble();
+  appendMsg(loadingRow);
+  
+  try {
+    // Convert file to base64
+    const base64 = await fileToBase64(file);
+    
+    // Send to backend
+    await fetch(`${BACKEND_URL}/api/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `tma ${initData}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        session_id: currentSessionId,
+        file_data: base64,
+        file_type: file.type,
+        file_name: file.name
+      })
+    });
+    
+    // Replace loading with actual media
+    const mediaRow = createMediaBubble(base64, file.type, true);
+    loadingRow.replaceWith(mediaRow);
+    showToast('✅ Media sent');
+    
+  } catch (error) {
+    console.error('Media upload error:', error);
+    loadingRow.remove();
+    showToast('❌ Failed to send media');
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function createMediaLoadingBubble() {
   const row = document.createElement('div');
   row.className = 'brow me';
   const mb = document.createElement('div');
   mb.className = 'bubble';
   mb.style.cssText = 'padding:0;overflow:hidden;background:var(--surface3);';
-  mb.innerHTML = `<div style="width:160px;height:110px;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--text-dim)">
-    <div style="width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,119,182,.2);
-    border-top-color:#0077b6;animation:sspin .7s linear infinite"></div>Scanning…</div>`;
+  mb.innerHTML = `<div style="width:200px;height:150px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:8px;">
+    <div style="width:28px;height:28px;border-radius:50%;border:3px solid rgba(0,119,182,.2);
+    border-top-color:#0077b6;animation:sspin .7s linear infinite"></div>
+    <div style="font-size:12px;color:var(--text-dim)">Uploading...</div>
+  </div>`;
   const wrap = document.createElement('div');
   const meta = document.createElement('div');
   meta.className = 'bmeta';
   meta.style.cssText = 'justify-content:flex-end;color:rgba(255,255,255,.55)';
   meta.textContent = nowStr();
-  wrap.appendChild(mb); wrap.appendChild(meta);
+  wrap.appendChild(mb);
+  wrap.appendChild(meta);
   row.appendChild(wrap);
-  appendMsg(row);
-  setTimeout(() => {
-    mb.innerHTML = '<div style="width:160px;height:110px;display:flex;align-items:center;justify-content:center;font-size:36px">📷</div>';
-  }, 1800);
-  showToast('📷 Photo sent — pre-scanned ✅');
-  // In production: upload via Telegram Bot API, then send file_id
+  return row;
+}
+
+function createMediaBubble(src, type, isMe) {
+  const row = document.createElement('div');
+  row.className = 'brow ' + (isMe ? 'me' : 'them');
+  
+  if (!isMe) {
+    const av = document.createElement('div');
+    av.className = 'av-sm';
+    av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
+    av.textContent = pEmoji;
+    row.appendChild(av);
+  }
+  
+  const wrap = document.createElement('div');
+  const bub = document.createElement('div');
+  bub.className = 'bubble';
+  bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
+  
+  if (type.startsWith('image/')) {
+    bub.innerHTML = `<img src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" loading="lazy">`;
+  } else if (type.startsWith('video/')) {
+    bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
+  }
+  
+  const meta = document.createElement('div');
+  meta.className = 'bmeta';
+  meta.textContent = nowStr();
+  
+  wrap.appendChild(bub);
+  wrap.appendChild(meta);
+  row.appendChild(wrap);
+  return row;
 }
 
 // ── Chat Actions ──────────────────────────────────────────────────────────────
