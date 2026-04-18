@@ -547,7 +547,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
 
 <!-- ══ VIP MODAL ══ -->
 <div class="overlay" id="vip-overlay" onclick="closeVIPOut(event)">
-  <div class="sheet" onclick="event.stopPropagation()">
+  <div class="sheet">
     <div class="handle"></div>
     <div class="vip-hdr">
       <div class="vcrown">👑</div>
@@ -1272,16 +1272,30 @@ function closeVIP() {
 }
 function closeVIPOut(e) {
   console.log('closeVIPOut called, target:', e.target, 'target.id:', e.target.id);
-  if (e.target.id === 'vip-overlay') closeVIP();
+  // Only close if clicking directly on the overlay (the dark background), not on the sheet or its children
+  if (e.target === e.currentTarget) {
+    console.log('Clicked on overlay background - closing');
+    closeVIP();
+  } else {
+    console.log('Clicked inside modal content - not closing');
+  }
 }
 function selPlan(el) {
+  console.log('selPlan called, element:', el);
   document.querySelectorAll('.pcard').forEach(c => c.style.borderColor = '');
   el.style.borderColor = 'rgba(245,200,66,.7)';
+  console.log('Plan selected');
 }
 function buyVIP() {
+  console.log('buyVIP called');
   closeVIP();
   // Opens bot in Telegram which handles the payment flow
-  if (tg?.openTelegramLink) tg.openTelegramLink('https://t.me/YOUR_ACTUAL_BOT_USERNAME?start=vip');
+  if (tg?.openTelegramLink) {
+    console.log('Opening Telegram link for VIP payment');
+    tg.openTelegramLink('https://t.me/YOUR_ACTUAL_BOT_USERNAME?start=vip');
+  } else {
+    console.log('Telegram WebApp not available - would open payment link');
+  }
   showToast('👑 Opening VIP payment in Telegram…');
 }
 
