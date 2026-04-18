@@ -547,7 +547,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
 
 <!-- ══ VIP MODAL ══ -->
 <div class="overlay" id="vip-overlay" onclick="closeVIPOut(event)">
-  <div class="sheet">
+  <div class="sheet" onclick="event.stopPropagation()">
     <div class="handle"></div>
     <div class="vip-hdr">
       <div class="vcrown">👑</div>
@@ -1255,9 +1255,25 @@ function inviteFriends() {
 }
 
 // ── VIP Modal ─────────────────────────────────────────────────────────────────
-function openVIP()  { document.getElementById('vip-overlay').classList.add('show'); }
-function closeVIP() { document.getElementById('vip-overlay').classList.remove('show'); }
-function closeVIPOut(e) { if (e.target.id === 'vip-overlay') closeVIP(); }
+function openVIP() {
+  console.log('openVIP called');
+  const overlay = document.getElementById('vip-overlay');
+  console.log('Overlay element found:', !!overlay);
+  if (overlay) {
+    overlay.classList.add('show');
+    console.log('Added show class. Current classes:', overlay.className);
+  } else {
+    console.error('vip-overlay element not found!');
+  }
+}
+function closeVIP() {
+  console.log('closeVIP called');
+  document.getElementById('vip-overlay').classList.remove('show');
+}
+function closeVIPOut(e) {
+  console.log('closeVIPOut called, target:', e.target, 'target.id:', e.target.id);
+  if (e.target.id === 'vip-overlay') closeVIP();
+}
 function selPlan(el) {
   document.querySelectorAll('.pcard').forEach(c => c.style.borderColor = '');
   el.style.borderColor = 'rgba(245,200,66,.7)';
