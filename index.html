@@ -443,6 +443,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
   .btn-vip-lobby{margin-top:8px;}
   .find-wrap{padding-top:4px;padding-bottom:calc(10px + var(--safe-b));}
 }
+
+/* Voice recording pulse animation */
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.2);opacity:.7}}
 </style>
 </head>
 <body>
@@ -649,6 +652,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
     <div class="qa-p" onclick="sendSticker('👋')">👋 Wave</div>
     <div class="qa-p" onclick="sendSticker('😄')">😄 Lol</div>
     <div class="qa-p" onclick="sendSticker('❤️')">❤️ Like</div>
+    <div class="qa-p" onclick="openGifPicker()">🎬 GIF</div>
+    <div class="qa-p" onclick="startVoiceRecording()">🎤 Voice</div>
     <div class="qa-p" onclick="sendPhoto()">📷 Photo</div>
   </div>
   <div class="dc-banner" id="dcb">
@@ -732,6 +737,54 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
     <button class="btn-vip" onclick="buyVIP()" style="background:#f5c842;box-shadow:0 6px 20px rgba(245,200,66,.25);color:#ffffff;font-weight:800;font-size:17px;padding:18px">Continue to Payment</button>
     <div style="text-align:center;margin-top:12px">
       <button class="btn-g" style="width:auto;padding:8px 20px;font-size:13px;font-weight:700" onclick="closeVIP()">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GIF PICKER MODAL ══ -->
+<div class="overlay" id="gif-overlay" onclick="closeGifPickerOut(event)">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:20px;margin-bottom:6px">🎬 Send a GIF</div>
+      <div style="font-size:12px;color:var(--text-dim)">Powered by Tenor</div>
+    </div>
+    <input type="text" id="gif-search" placeholder="Search GIFs..." style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-size:14px;margin-bottom:14px;font-family:inherit;color:var(--text)" onkeyup="searchGifs(this.value)">
+    <div id="gif-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:400px;overflow-y:auto;scrollbar-width:thin">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim);font-size:13px">Type to search for GIFs...</div>
+    </div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn-g" style="width:auto;padding:8px 20px;font-size:13px" onclick="closeGifPicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VOICE RECORDING MODAL ══ -->
+<div class="overlay" id="voice-overlay" onclick="closeVoiceRecorderOut(event)">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:20px;margin-bottom:6px">🎤 Voice Message</div>
+    </div>
+    <div id="voice-recorder-ui" style="display:flex;flex-direction:column;align-items:center;gap:20px">
+      <div id="recording-indicator" style="display:none">
+        <div style="width:80px;height:80px;border-radius:50%;background:rgba(230,57,70,.1);display:flex;align-items:center;justify-content:center;position:relative">
+          <div style="width:24px;height:24px;border-radius:4px;background:#e63946;animation:pulse 1.5s ease-in-out infinite"></div>
+        </div>
+        <div id="recording-time" style="font-size:24px;font-weight:700;font-family:'Clash Display',sans-serif;margin-top:12px;text-align:center">0:00</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:4px">Recording...</div>
+      </div>
+      <div id="voice-playback" style="display:none;width:100%">
+        <audio id="voice-preview" controls style="width:100%;margin-bottom:12px"></audio>
+        <div style="display:flex;gap:8px">
+          <button class="btn-p" onclick="sendVoiceMessage()" style="flex:1;padding:14px">📤 Send</button>
+          <button class="btn-g" onclick="restartVoiceRecording()" style="flex:1;padding:14px">🔄 Re-record</button>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn-g" id="voice-action-btn" style="width:auto;padding:10px 24px;font-size:14px" onclick="toggleVoiceRecording()">🎙️ Start Recording</button>
+      <button class="btn-g" style="width:auto;padding:8px 20px;font-size:13px;margin-left:8px" onclick="closeVoiceRecorder()">Cancel</button>
     </div>
   </div>
 </div>
@@ -1297,6 +1350,9 @@ async function handleFileSelect(event) {
   // Reset input
   event.target.value = '';
   
+  // Debug: Log file info
+  console.log('📁 File selected:', file.name, 'Type:', file.type, 'Size:', file.size);
+  
   // Check file size (max 10MB for images, 20MB for videos)
   const maxSize = file.type.startsWith('video/') ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
   if (file.size > maxSize) {
@@ -1386,16 +1442,46 @@ function createMediaBubble(src, type, isMe) {
   const wrap = document.createElement('div');
   const bub = document.createElement('div');
   bub.className = 'bubble';
-  bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
   
-  if (type.startsWith('image/')) {
-    // Use img tag for all images (JPG, PNG, GIF, etc)
+  // Debug log
+  console.log('📊 Creating media bubble - Type:', type);
+  
+  // Normalize type (handle empty or malformed MIME types)
+  const normalizedType = (type || '').toLowerCase();
+  
+  // Handle audio/voice messages
+  if (normalizedType.startsWith('audio/')) {
+    bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
+    bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:18px">🎤</div>
+      <audio src="${src}" controls style="flex:1;height:32px"></audio>
+    </div>`;
+  }
+  // Check if it's an image (including GIF)
+  else if (normalizedType.startsWith('image/') || normalizedType.includes('gif')) {
+    bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
     bub.innerHTML = `<img src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" loading="lazy">`;
-  } else if (type.startsWith('video/')) {
+  } else if (normalizedType.startsWith('video/')) {
+    bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
     bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
   } else {
-    // Fallback for unknown types
-    bub.innerHTML = `<div style="padding:12px;color:var(--text-dim);">📎 Unsupported file type</div>`;
+    // Fallback: Try to detect from data URL
+    if (src.startsWith('data:image/')) {
+      bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
+      bub.innerHTML = `<img src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" loading="lazy">`;
+    } else if (src.startsWith('data:video/')) {
+      bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
+      bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
+    } else if (src.startsWith('data:audio/')) {
+      bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
+      bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:18px">🎤</div>
+        <audio src="${src}" controls style="flex:1;height:32px"></audio>
+      </div>`;
+    } else {
+      bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
+      bub.innerHTML = `<div style="padding:12px;color:var(--text-dim);">📎 Unsupported file type: ${type}</div>`;
+    }
   }
   
   const meta = document.createElement('div');
@@ -1565,6 +1651,278 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2700);
+}
+
+// ── GIF Picker ────────────────────────────────────────────────────────────────
+const TENOR_API_KEY = 'AIzaSyAa8yy16GmYuekHYvzqlnDbIllY8J_sU-s'; // Tenor public demo key
+let gifSearchTimeout = null;
+
+function openGifPicker() {
+  document.getElementById('gif-overlay').classList.add('show');
+  document.getElementById('gif-search').focus();
+}
+
+function closeGifPicker() {
+  document.getElementById('gif-overlay').classList.remove('show');
+  document.getElementById('gif-search').value = '';
+  document.getElementById('gif-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim);font-size:13px">Type to search for GIFs...</div>';
+}
+
+function closeGifPickerOut(e) {
+  if (e.target.id === 'gif-overlay') closeGifPicker();
+}
+
+function searchGifs(query) {
+  clearTimeout(gifSearchTimeout);
+  const grid = document.getElementById('gif-grid');
+  
+  if (!query.trim()) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim);font-size:13px">Type to search for GIFs...</div>';
+    return;
+  }
+  
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim);font-size:13px">Searching...</div>';
+  
+  gifSearchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${TENOR_API_KEY}&limit=20&media_filter=gif`);
+      const data = await res.json();
+      
+      if (data.results && data.results.length > 0) {
+        grid.innerHTML = data.results.map(gif => {
+          const url = gif.media_formats.tinygif.url;
+          return `<div style="cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--surface2)" onclick="sendGif('${url}')">
+            <img src="${url}" style="width:100%;height:100%;object-fit:cover">
+          </div>`;
+        }).join('');
+      } else {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim);font-size:13px">No GIFs found. Try another search!</div>';
+      }
+    } catch (err) {
+      console.error('GIF search error:', err);
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--red);font-size:13px">Failed to load GIFs. Try again!</div>';
+    }
+  }, 500);
+}
+
+async function sendGif(gifUrl) {
+  if (state !== 'chatting' || !currentSessionId) {
+    showToast('⚠️ Start a chat first');
+    return;
+  }
+  
+  closeGifPicker();
+  
+  // Show loading indicator
+  const loadingRow = createMediaLoadingBubble();
+  appendMsg(loadingRow);
+  
+  try {
+    // Fetch the GIF and convert to base64
+    const response = await fetch(gifUrl);
+    const blob = await response.blob();
+    const base64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+    
+    // Send to backend
+    await fetch(`${BACKEND_URL}/api/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `tma ${initData}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        session_id: currentSessionId,
+        file_data: base64,
+        file_type: 'image/gif',
+        file_name: 'tenor.gif'
+      })
+    });
+    
+    // Replace loading with actual GIF
+    const mediaRow = createMediaBubble(base64, 'image/gif', true);
+    loadingRow.replaceWith(mediaRow);
+    showToast('✅ GIF sent');
+    
+  } catch (error) {
+    console.error('GIF send error:', error);
+    loadingRow.remove();
+    showToast('❌ Failed to send GIF');
+  }
+}
+
+// ── Voice Recording ───────────────────────────────────────────────────────────
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStartTime = null;
+let recordingTimer = null;
+let recordedBlob = null;
+
+function startVoiceRecording() {
+  if (state !== 'chatting') {
+    showToast('⚠️ Start a chat first');
+    return;
+  }
+  document.getElementById('voice-overlay').classList.add('show');
+}
+
+function closeVoiceRecorder() {
+  stopRecording();
+  document.getElementById('voice-overlay').classList.remove('show');
+  document.getElementById('recording-indicator').style.display = 'none';
+  document.getElementById('voice-playback').style.display = 'none';
+  document.getElementById('voice-action-btn').textContent = '🎙️ Start Recording';
+  recordedBlob = null;
+}
+
+function closeVoiceRecorderOut(e) {
+  if (e.target.id === 'voice-overlay') closeVoiceRecorder();
+}
+
+async function toggleVoiceRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunks.push(e.data);
+    };
+    
+    mediaRecorder.onstop = () => {
+      recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const audioUrl = URL.createObjectURL(recordedBlob);
+      document.getElementById('voice-preview').src = audioUrl;
+      document.getElementById('recording-indicator').style.display = 'none';
+      document.getElementById('voice-playback').style.display = 'block';
+      document.getElementById('voice-action-btn').textContent = '🎙️ Start Recording';
+      
+      // Stop all tracks
+      stream.getTracks().forEach(track => track.stop());
+    };
+    
+    mediaRecorder.start();
+    recordingStartTime = Date.now();
+    document.getElementById('recording-indicator').style.display = 'block';
+    document.getElementById('voice-playback').style.display = 'none';
+    document.getElementById('voice-action-btn').textContent = '⏹️ Stop Recording';
+    
+    // Update timer
+    recordingTimer = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      document.getElementById('recording-time').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      
+      // Auto-stop after 60 seconds
+      if (elapsed >= 60) {
+        stopRecording();
+      }
+    }, 100);
+    
+  } catch (error) {
+    console.error('Microphone access error:', error);
+    showToast('❌ Microphone access denied');
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    clearInterval(recordingTimer);
+  }
+}
+
+function restartVoiceRecording() {
+  document.getElementById('voice-playback').style.display = 'none';
+  recordedBlob = null;
+  startRecording();
+}
+
+async function sendVoiceMessage() {
+  if (!recordedBlob || state !== 'chatting' || !currentSessionId) return;
+  
+  closeVoiceRecorder();
+  
+  // Show loading indicator
+  const loadingRow = createMediaLoadingBubble();
+  appendMsg(loadingRow);
+  
+  try {
+    // Convert blob to base64
+    const base64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(recordedBlob);
+    });
+    
+    // Send to backend
+    await fetch(`${BACKEND_URL}/api/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `tma ${initData}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        session_id: currentSessionId,
+        file_data: base64,
+        file_type: 'audio/webm',
+        file_name: 'voice.webm'
+      })
+    });
+    
+    // Replace loading with voice bubble
+    const mediaRow = createVoiceBubble(base64, true);
+    loadingRow.replaceWith(mediaRow);
+    showToast('✅ Voice sent');
+    
+  } catch (error) {
+    console.error('Voice send error:', error);
+    loadingRow.remove();
+    showToast('❌ Failed to send voice message');
+  }
+}
+
+function createVoiceBubble(src, isMe) {
+  const row = document.createElement('div');
+  row.className = 'brow ' + (isMe ? 'me' : 'them');
+  
+  if (!isMe) {
+    const av = document.createElement('div');
+    av.className = 'av-sm';
+    av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
+    av.textContent = pEmoji;
+    row.appendChild(av);
+  }
+  
+  const wrap = document.createElement('div');
+  const bub = document.createElement('div');
+  bub.className = 'bubble';
+  bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
+  bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+    <div style="font-size:18px">🎤</div>
+    <audio src="${src}" controls style="flex:1;height:32px"></audio>
+  </div>`;
+  
+  const meta = document.createElement('div');
+  meta.className = 'bmeta';
+  meta.textContent = nowStr();
+  
+  wrap.appendChild(bub);
+  wrap.appendChild(meta);
+  row.appendChild(wrap);
+  return row;
 }
 
 // ── Keyframe for photo scan spinner ──────────────────────────────────────────
