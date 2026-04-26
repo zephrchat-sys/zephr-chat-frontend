@@ -1872,8 +1872,10 @@ async function sendVoiceMessage() {
       reader.readAsDataURL(recordedBlob);
     });
     
+    console.log('📤 Sending voice message, size:', recordedBlob.size, 'type:', recordedBlob.type);
+    
     // Send to backend
-    await fetch(`${BACKEND_URL}/api/upload-media`, {
+    const response = await fetch(`${BACKEND_URL}/api/upload-media`, {
       method: 'POST',
       headers: {
         'Authorization': `tma ${initData}`,
@@ -1887,8 +1889,14 @@ async function sendVoiceMessage() {
       })
     });
     
-    // Replace loading with voice bubble
-    const mediaRow = createVoiceBubble(base64, true);
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+    
+    console.log('✅ Voice message sent successfully');
+    
+    // Replace loading with voice bubble - use createMediaBubble for consistency
+    const mediaRow = createMediaBubble(base64, 'audio/webm', true);
     loadingRow.replaceWith(mediaRow);
     showToast('✅ Voice sent');
     
@@ -1897,37 +1905,6 @@ async function sendVoiceMessage() {
     loadingRow.remove();
     showToast('❌ Failed to send voice message');
   }
-}
-
-function createVoiceBubble(src, isMe) {
-  const row = document.createElement('div');
-  row.className = 'brow ' + (isMe ? 'me' : 'them');
-  
-  if (!isMe) {
-    const av = document.createElement('div');
-    av.className = 'av-sm';
-    av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
-    av.textContent = pEmoji;
-    row.appendChild(av);
-  }
-  
-  const wrap = document.createElement('div');
-  const bub = document.createElement('div');
-  bub.className = 'bubble';
-  bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
-  bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
-    <div style="font-size:18px">🎤</div>
-    <audio src="${src}" controls style="flex:1;height:32px"></audio>
-  </div>`;
-  
-  const meta = document.createElement('div');
-  meta.className = 'bmeta';
-  meta.textContent = nowStr();
-  
-  wrap.appendChild(bub);
-  wrap.appendChild(meta);
-  row.appendChild(wrap);
-  return row;
 }
 
 // ── Keyframe for photo scan spinner ──────────────────────────────────────────
