@@ -974,7 +974,7 @@ async function saveProfileFromLobby() {
   if (country) profileData.country = country;
   
   try {
-    const response = await fetch('/api/profile', {
+    const response = await fetch(`${BACKEND_URL}/api/profile`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(profileData)
