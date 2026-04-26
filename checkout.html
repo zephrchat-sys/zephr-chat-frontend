@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zephr VIP - Global Checkout</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0077b6, #00b4d8);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #0077b6;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .currency-selector {
+            background: #f0f6ff;
+            border: 1px solid #0077b6;
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+            margin: 15px 0;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .plan {
+            background: #f0f6ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .price {
+            font-size: 36px;
+            font-weight: bold;
+            color: #0077b6;
+            margin: 10px 0;
+        }
+        .price-note {
+            font-size: 12px;
+            color: #90b8d4;
+            margin-top: 5px;
+        }
+        .features {
+            list-style: none;
+            margin: 20px 0;
+        }
+        .features li {
+            padding: 8px 0;
+            color: #4a7ea8;
+        }
+        .features li:before {
+            content: "✓ ";
+            color: #0096c7;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #0077b6, #00b4d8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.02);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .payment-methods {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #90b8d4;
+        }
+        .auto-detect {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👑 Zephr VIP</h1>
+        <p style="color: #4a7ea8; margin-bottom: 20px;">Unlock the full experience</p>
+        
+        <div class="auto-detect" id="autoDetect">
+            🌍 Auto-detected: <span id="detectedLocation">India</span>
+        </div>
+        
+        <label for="currencySelect" style="color: #4a7ea8; font-size: 14px; display: block; margin-bottom: 5px;">
+            Choose your currency:
+        </label>
+        <select id="currencySelect" class="currency-selector" onchange="updatePrice()">
+            <option value="INR">🇮🇳 Indian Rupee (₹)</option>
+            <option value="USD">🇺🇸 US Dollar ($)</option>
+            <option value="EUR">🇪🇺 Euro (€)</option>
+            <option value="GBP">🇬🇧 British Pound (£)</option>
+            <option value="AED">🇦🇪 UAE Dirham (AED)</option>
+            <option value="SGD">🇸🇬 Singapore Dollar (S$)</option>
+            <option value="AUD">🇦🇺 Australian Dollar (A$)</option>
+            <option value="CAD">🇨🇦 Canadian Dollar (C$)</option>
+            <option value="SAR">🇸🇦 Saudi Riyal (SAR)</option>
+            <option value="MYR">🇲🇾 Malaysian Ringgit (RM)</option>
+        </select>
+        
+        <div class="plan">
+            <div id="planTitle">Monthly Plan</div>
+            <div class="price" id="planPrice">₹415</div>
+            <div style="color: #90b8d4; font-size: 14px;">per month</div>
+            <div class="price-note" id="priceNote"></div>
+        </div>
+        
+        <ul class="features">
+            <li>Priority matching queue</li>
+            <li>Gender & country filters</li>
+            <li>Auto-translate messages</li>
+            <li>Username reveal option</li>
+            <li>No ads, forever</li>
+        </ul>
+        
+        <button onclick="initiatePayment()">Pay Securely</button>
+        
+        <div class="payment-methods" id="paymentMethods">
+            Cards • Net Banking • Wallets
+        </div>
+    </div>
+
+    <script>
+        // Get plan and user info from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'monthly';
+        const userId = urlParams.get('user_id');
+        const firstName = urlParams.get('first_name') || 'User';
+        
+        // Pricing for all currencies (amounts in smallest unit)
+        const pricing = {
+            monthly: {
+                INR: { amount: 41500, symbol: '₹', display: '415' },
+                USD: { amount: 499, symbol: '$', display: '4.99' },
+                EUR: { amount: 499, symbol: '€', display: '4.99' },
+                GBP: { amount: 399, symbol: '£', display: '3.99' },
+                AED: { amount: 1800, symbol: 'AED ', display: '18' },
+                SGD: { amount: 700, symbol: 'S$', display: '7' },
+                AUD: { amount: 699, symbol: 'A$', display: '6.99' },
+                CAD: { amount: 699, symbol: 'C$', display: '6.99' },
+                SAR: { amount: 1900, symbol: 'SAR ', display: '19' },
+                MYR: { amount: 2200, symbol: 'RM', display: '22' }
+            },
+            quarterly: {
+                INR: { amount: 83000, symbol: '₹', display: '830' },
+                USD: { amount: 999, symbol: '$', display: '9.99' },
+                EUR: { amount: 999, symbol: '€', display: '9.99' },
+                GBP: { amount: 799, symbol: '£', display: '7.99' },
+                AED: { amount: 3600, symbol: 'AED ', display: '36' },
+                SGD: { amount: 1400, symbol: 'S$', display: '14' },
+                AUD: { amount: 1399, symbol: 'A$', display: '13.99' },
+                CAD: { amount: 1399, symbol: 'C$', display: '13.99' },
+                SAR: { amount: 3800, symbol: 'SAR ', display: '38' },
+                MYR: { amount: 4400, symbol: 'RM', display: '44' }
+            }
+        };
+        
+        // Country to currency mapping
+        const countryToCurrency = {
+            'IN': 'INR',
+            'US': 'USD',
+            'GB': 'GBP',
+            'AU': 'AUD',
+            'CA': 'CAD',
+            'SG': 'SGD',
+            'AE': 'AED',
+            'SA': 'SAR',
+            'MY': 'MYR',
+            // EU countries
+            'DE': 'EUR', 'FR': 'EUR', 'IT': 'EUR', 'ES': 'EUR',
+            'NL': 'EUR', 'BE': 'EUR', 'AT': 'EUR', 'IE': 'EUR'
+        };
+        
+        const currencyToCountryName = {
+            'INR': 'India',
+            'USD': 'United States',
+            'EUR': 'Europe',
+            'GBP': 'United Kingdom',
+            'AED': 'UAE',
+            'SGD': 'Singapore',
+            'AUD': 'Australia',
+            'CAD': 'Canada',
+            'SAR': 'Saudi Arabia',
+            'MYR': 'Malaysia'
+        };
+        
+        // Auto-detect currency from Telegram user data
+        function detectCurrency() {
+            try {
+                const tg = window.Telegram.WebApp;
+                const userData = tg.initDataUnsafe;
+                
+                // Try to get country from language code
+                if (userData?.user?.language_code) {
+                    const langCode = userData.user.language_code.toUpperCase();
+                    const countryCode = langCode.split('-')[1] || langCode.split('_')[1];
+                    
+                    if (countryCode && countryToCurrency[countryCode]) {
+                        return countryToCurrency[countryCode];
+                    }
+                }
+            } catch (e) {
+                console.log('Telegram data not available, using INR');
+            }
+            
+            return 'INR'; // Default to INR
+        }
+        
+        // Initialize
+        let selectedCurrency = detectCurrency();
+        document.getElementById('currencySelect').value = selectedCurrency;
+        document.getElementById('detectedLocation').textContent = currencyToCountryName[selectedCurrency];
+        updatePrice();
+        
+        // Update plan title
+        const planTitles = {
+            monthly: 'Monthly Plan',
+            quarterly: '3 Months Plan - Save 33%!'
+        };
+        document.getElementById('planTitle').textContent = planTitles[plan];
+        
+        // Update payment methods based on currency
+        function updatePaymentMethods(currency) {
+            const methods = document.getElementById('paymentMethods');
+            if (currency === 'INR') {
+                methods.textContent = 'UPI • Cards • Net Banking • Wallets';
+            } else {
+                methods.textContent = 'Credit Cards • Debit Cards';
+            }
+        }
+        
+        // Update displayed price
+        function updatePrice() {
+            selectedCurrency = document.getElementById('currencySelect').value;
+            const priceData = pricing[plan][selectedCurrency];
+            
+            document.getElementById('planPrice').textContent = 
+                priceData.symbol + priceData.display;
+            
+            // Show conversion note for non-INR
+            if (selectedCurrency !== 'INR') {
+                const inrPrice = pricing[plan]['INR'].display;
+                document.getElementById('priceNote').textContent = 
+                    `≈ ₹${inrPrice} INR (converted to your account)`;
+            } else {
+                document.getElementById('priceNote').textContent = '';
+            }
+            
+            updatePaymentMethods(selectedCurrency);
+        }
+        
+        // Initiate payment
+        async function initiatePayment() {
+            const priceData = pricing[plan][selectedCurrency];
+            
+            try {
+                // Create order on backend
+                const response = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: priceData.amount,
+                        currency: selectedCurrency,
+                        plan: plan,
+                        user_id: userId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create order');
+                }
+                
+                const order = await response.json();
+                
+                // Razorpay configuration
+                const options = {
+                    key: 'rzp_test_SfNMBB4UtGehsK', // Replace with your key
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: 'Zephr Chat',
+                    description: planTitles[plan],
+                    order_id: order.id,
+                    prefill: {
+                        name: firstName
+                    },
+                    theme: {
+                        color: '#0077b6'
+                    },
+                    handler: function (response) {
+                        verifyPayment(response);
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            alert('Payment cancelled. You can try again anytime!');
+                        }
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+                rzp.open();
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Failed to initiate payment. Please try again.');
+            }
+        }
+        
+        // Verify payment
+        async function verifyPayment(response) {
+            try {
+                const result = await fetch('/api/verify-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature,
+                        user_id: userId,
+                        plan: plan
+                    })
+                });
+                
+                const verification = await result.json();
+                
+                if (verification.success) {
+                    // Redirect back to Telegram
+                    window.location.href = 'https://t.me/zephrchat_bot?start=payment_success';
+                } else {
+                    alert('Payment verification failed. Please contact support.');
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+                alert('Payment verification failed. Please contact support.');
+            }
+        }
+    </script>
+</body>
+</html>
