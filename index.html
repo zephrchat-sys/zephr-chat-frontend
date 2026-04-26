@@ -256,8 +256,16 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
   border-bottom:1px solid rgba(0,119,182,.14);
   display:flex;align-items:center;gap:7px;
   font-size:11.5px;color:var(--accent3);flex-shrink:0;}
-.qa-bar{width:100%;padding:5px 11px;display:flex;gap:6px;flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
+.qa-bar{width:100%;padding:8px 13px;display:flex;justify-content:center;align-items:center;flex-shrink:0;
+  background:var(--surface);border-bottom:1px solid var(--border);}
 .qa-bar::-webkit-scrollbar{display:none;}
+.btn-next-chat{padding:10px 24px;background:linear-gradient(135deg,#0077b6,#00b4d8);
+  border:none;border-radius:50px;color:#ffffff;
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;
+  cursor:pointer;box-shadow:0 4px 14px rgba(0,119,182,.2);
+  transition:transform .15s,box-shadow .15s;}
+.btn-next-chat:active{transform:scale(.95);}
+.btn-next-chat:hover{box-shadow:0 6px 18px rgba(0,119,182,.3);}
 .qa-p{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);
   border-radius:50px;font-size:12px;color:var(--text-dim);cursor:pointer;white-space:nowrap;
   transition:border-color .15s,color .15s;flex-shrink:0;}
@@ -309,8 +317,9 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .inp-wrap:focus-within{border-color:rgba(0,119,182,.45);}
 .ia-btn{width:36px;height:36px;border-radius:50%;background:var(--surface2);
   border:none;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:17px;color:var(--text-dim);transition:background .15s;}
+  cursor:pointer;font-size:17px;color:var(--text-dim);transition:background .15s,transform .15s;}
 .ia-btn:hover{background:var(--surface3);}
+.ia-btn:active{transform:scale(.9);}
 #msg-i{flex:1;background:none;border:none;outline:none;color:var(--text);
   font-family:'Plus Jakarta Sans',sans-serif;font-size:14.5px;line-height:1.4;
   resize:none;max-height:110px;scrollbar-width:none;}
@@ -648,13 +657,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
   </div>
   <div class="ai-bar">🛡️ AI moderation active — creeps auto-blocked in real-time</div>
   <div class="qa-bar">
-    <div class="qa-p" onclick="nextChat()">/next</div>
-    <div class="qa-p" onclick="sendSticker('👋')">👋 Wave</div>
-    <div class="qa-p" onclick="sendSticker('😄')">😄 Lol</div>
-    <div class="qa-p" onclick="sendSticker('❤️')">❤️ Like</div>
-    <div class="qa-p" onclick="openGifPicker()">🎬 GIF</div>
-    <div class="qa-p" onclick="startVoiceRecording()">🎤 Voice</div>
-    <div class="qa-p" onclick="sendPhoto()">📷 Photo</div>
+    <button class="btn-next-chat" onclick="nextChat()">⏭ Next Chat</button>
   </div>
   <div class="dc-banner" id="dcb">
     👻 Stranger disconnected — <span class="dc-lnk" onclick="startSearch()">Find new?</span>
@@ -662,7 +665,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
   <div class="msgs" id="msgs"></div>
   <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4" style="display:none" onchange="handleFileSelect(event)">
   <div class="inp-bar">
-    <button class="ia-btn" onclick="triggerFileUpload()">📎</button>
+    <button class="ia-btn" onclick="openGifPicker()" title="Send GIF">🎬</button>
+    <button class="ia-btn" onclick="startVoiceRecording()" title="Voice Message">🎤</button>
+    <button class="ia-btn" onclick="triggerFileUpload()" title="Send Photo">📷</button>
     <div class="inp-wrap">
       <textarea id="msg-i" rows="1" placeholder="Message…"
         oninput="onInp()" onkeydown="onKD(event)"></textarea>
