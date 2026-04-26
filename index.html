@@ -655,7 +655,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
     👻 Stranger disconnected — <span class="dc-lnk" onclick="startSearch()">Find new?</span>
   </div>
   <div class="msgs" id="msgs"></div>
-  <input type="file" id="file-input" accept="image/*,video/mp4,.gif" style="display:none" onchange="handleFileSelect(event)">
+  <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4" style="display:none" onchange="handleFileSelect(event)">
   <div class="inp-bar">
     <button class="ia-btn" onclick="triggerFileUpload()">📎</button>
     <div class="inp-wrap">
@@ -1389,9 +1389,13 @@ function createMediaBubble(src, type, isMe) {
   bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
   
   if (type.startsWith('image/')) {
+    // Use img tag for all images (JPG, PNG, GIF, etc)
     bub.innerHTML = `<img src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" loading="lazy">`;
   } else if (type.startsWith('video/')) {
     bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
+  } else {
+    // Fallback for unknown types
+    bub.innerHTML = `<div style="padding:12px;color:var(--text-dim);">📎 Unsupported file type</div>`;
   }
   
   const meta = document.createElement('div');
