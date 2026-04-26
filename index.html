@@ -71,6 +71,38 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .ps-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
 .ps-text{font-size:11.5px;color:var(--accent3);line-height:1.5;}
 .ps-text a{color:inherit;text-decoration:underline;opacity:.75;}
+.profile-setup{width:100%;background:rgba(245,200,66,.08);
+  border:1px solid rgba(245,200,66,.2);border-radius:12px;
+  padding:14px;transition:max-height .3s ease,opacity .3s ease,padding .3s ease;
+  max-height:500px;opacity:1;overflow:hidden;}
+.profile-setup.collapsed{max-height:0;opacity:0;padding:0 14px;border:none;}
+.btn-profile-toggle{background:rgba(245,200,66,.12);border:1px solid rgba(245,200,66,.25);
+  border-radius:20px;padding:10px 20px;color:var(--text);
+  font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;
+  cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  transition:background .2s,border-color .2s,transform .15s;}
+.btn-profile-toggle:hover{background:rgba(245,200,66,.18);border-color:rgba(245,200,66,.35);}
+.btn-profile-toggle:active{transform:scale(.97);}
+.profile-toggle{font-size:12px;transition:transform .3s ease;display:inline-block;}
+.profile-toggle.collapsed{transform:rotate(-90deg);}
+.profile-setup-title{font-family:'Clash Display',sans-serif;font-weight:700;
+  font-size:14px;margin-bottom:4px;color:var(--text);}
+.profile-setup-desc{font-size:11px;color:var(--text-dim);margin-bottom:12px;}
+.profile-inputs{display:flex;flex-direction:column;gap:8px;}
+.profile-field{display:flex;flex-direction:column;gap:4px;}
+.profile-field label{font-size:11px;font-weight:600;color:var(--text);}
+.profile-field input,.profile-field select{width:100%;padding:8px 10px;
+  background:var(--bg);border:1px solid var(--border2);border-radius:8px;
+  font-size:14px;color:var(--text);font-family:inherit;
+  transition:border-color .2s;}
+.profile-field input:focus,.profile-field select:focus{
+  outline:none;border-color:var(--accent);}
+.profile-field input::placeholder{color:var(--text-dim);opacity:.6;}
+.btn-save-profile{width:100%;padding:10px;background:linear-gradient(135deg,#0077b6,#00b4d8);
+  border:none;border-radius:8px;color:#ffffff;font-family:'Clash Display',sans-serif;
+  font-weight:700;font-size:13px;cursor:pointer;margin-top:10px;
+  transition:transform .15s;}
+.btn-save-profile:active{transform:scale(.97);}
 .ob-foot{width:100%;padding:14px 26px calc(14px + var(--safe-b));
   background:linear-gradient(to top,var(--bg) 60%,transparent);
   display:flex;flex-direction:column;gap:9px;flex-shrink:0;}
@@ -436,14 +468,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
         <div><div class="p-t">Chats Auto-Delete</div><div class="p-d">Zero logs. Sessions live in memory only. Nothing ever stored on disk.</div></div>
       </div>
     </div>
-    <div class="privacy-strip">
-      <div class="ps-icon">🔒</div>
-      <div class="ps-text">Zero logs · Chats self-destruct on end · Open-source matching engine on <a href="#">GitHub ↗</a></div>
-    </div>
   </div>
   <div class="ob-foot">
-    <button class="btn-p" onclick="goLobby()">Start Chatting — It's Free</button>
-    <button class="btn-g" onclick="openVIP()">👑 See VIP Features</button>
+    <button class="btn-p" onclick="goLobby()" style="color:#ffffff;font-weight:800;font-size:17px">Start Chatting — It's Free</button>
+    <button class="btn-g" onclick="openVIP()" style="background:#f5c842;border:none;color:#ffffff;font-weight:800;box-shadow:0 6px 20px rgba(245,200,66,.25);padding:16px;font-size:17px">👑 See VIP Features</button>
   </div>
 </div>
 
@@ -462,19 +490,37 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
     <div class="stat-p"><div class="sn" id="s-td">—</div><div class="sl">Today</div></div>
   </div>
   <div class="lscroll">
-    <div class="sec-lbl" style="margin-bottom:10px">Filters</div>
-    <div class="filt-grid">
-      <div class="filt-row">
-        <span class="filt-lbl">Language</span>
-        <div class="chips" data-filter="lang">
-          <div class="chip on" onclick="chip(this)">Any</div>
-          <div class="chip" onclick="chip(this)">English</div>
-		  <div class="chip" onclick="chip(this)">Hindi</div>
-          <div class="chip" onclick="chip(this)">Spanish</div>          
-          <div class="chip" onclick="chip(this)">Arabic</div>
-          <div class="chip" onclick="chip(this)">French</div>
+    <div style="text-align:center;margin-bottom:12px">
+      <button class="btn-profile-toggle" onclick="toggleProfile()">
+        <span id="profile-btn-text">📝 Your Profile (Optional)</span>
+        <span class="profile-toggle collapsed" id="profile-toggle">▼</span>
+      </button>
+    </div>
+    <div class="profile-setup collapsed" id="profile-setup" style="margin-bottom:16px">
+      <div class="profile-setup-desc">Help us match you better</div>
+      <div class="profile-inputs">
+        <div class="profile-field">
+          <label for="user-age">Age</label>
+          <input type="number" id="user-age" placeholder="Enter your age" min="13" max="100">
+        </div>
+        <div class="profile-field">
+          <label for="user-gender">Gender</label>
+          <select id="user-gender">
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="profile-field">
+          <label for="user-country">Country</label>
+          <input type="text" id="user-country" placeholder="e.g., India, USA, UK">
         </div>
       </div>
+      <button class="btn-save-profile" onclick="saveProfileFromLobby()">💾 Save Profile</button>
+    </div>
+    <div class="sec-lbl" style="margin-bottom:10px">Filters</div>
+    <div class="filt-grid">
       <div class="filt-row">
         <span class="filt-lbl">Age</span>
         <div class="chips" data-filter="age">
@@ -612,7 +658,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
       <div class="vperk"><div class="vpi">⚡</div><div><div class="vpt">Priority Queue</div><div class="vps">Skip the wait — match in &lt;0.5 seconds</div></div></div>
       <div class="vperk"><div class="vpi">🌐</div><div><div class="vpt">Auto-Translate</div><div class="vps">Talk to anyone in any language, instantly</div></div></div>
       <div class="vperk"><div class="vpi">🏷️</div><div><div class="vpt">Username Reveal (with consent)</div><div class="vps">Exchange Telegram handles when both agree</div></div></div>
-      <div class="vperk"><div class="vpi">🚫</div><div><div class="vpt">No Ads, No Interruptions</div><div class="vps">Pure, clean chat experience forever</div></div></div>
     </div>
     <div class="pcards">
       <div class="pcard" onclick="selPlan(this)">
@@ -629,9 +674,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
       </div>
     </div>
     <div class="trial-note">✅ 3-day free trial · Cancel anytime · No hidden fees</div>
-    <button class="btn-vip" onclick="buyVIP()">Continue to Payment</button>
+    <button class="btn-vip" onclick="activateFreeTrial()" style="margin-bottom:12px;background:linear-gradient(135deg,#0077b6,#00b4d8);box-shadow:0 8px 28px rgba(0,119,182,.25);color:#ffffff;font-weight:800;font-size:17px;padding:18px">🎁 Activate Free Trial</button>
+    <button class="btn-vip" onclick="buyVIP()" style="background:#f5c842;box-shadow:0 6px 20px rgba(245,200,66,.25);color:#ffffff;font-weight:800;font-size:17px;padding:18px">Continue to Payment</button>
     <div style="text-align:center;margin-top:12px">
-      <button class="btn-g" style="width:auto;padding:8px 20px;font-size:13px" onclick="closeVIP()">Maybe later</button>
+      <button class="btn-g" style="width:auto;padding:8px 20px;font-size:13px;font-weight:700" onclick="closeVIP()">Maybe later</button>
     </div>
   </div>
 </div>
@@ -897,7 +943,74 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
-function goLobby() { state = 'lobby'; show('lobby'); fetchStats(); }
+function goLobby() { 
+  state = 'lobby'; 
+  show('lobby'); 
+  fetchStats();
+  loadUserProfile(); // Load existing profile data if any
+}
+
+// Load user's existing profile data into the form
+async function loadUserProfile() {
+  // This would need a GET endpoint - for now just leave fields empty
+  // Users can fill them in when they want
+}
+
+// Save profile from lobby page
+async function saveProfileFromLobby() {
+  const age = document.getElementById('user-age')?.value;
+  const gender = document.getElementById('user-gender')?.value;
+  const country = document.getElementById('user-country')?.value;
+  
+  // Check if at least one field is filled
+  if (!age && !gender && !country) {
+    showToast('⚠️ Please fill in at least one field');
+    return;
+  }
+  
+  const profileData = {};
+  if (age) profileData.age = parseInt(age);
+  if (gender) profileData.gender = gender;
+  if (country) profileData.country = country;
+  
+  try {
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profileData)
+    });
+    
+    if (response.ok) {
+      showToast('✅ Profile saved successfully!');
+    } else {
+      showToast('❌ Failed to save profile');
+    }
+  } catch (err) {
+    console.error('Profile save failed:', err);
+    showToast('❌ Failed to save profile');
+  }
+}
+
+// Toggle profile section collapse/expand
+function toggleProfile() {
+  const profileSetup = document.getElementById('profile-setup');
+  const profileToggle = document.getElementById('profile-toggle');
+  
+  if (profileSetup.classList.contains('collapsed')) {
+    // Expand
+    profileSetup.classList.remove('collapsed');
+    profileToggle.classList.remove('collapsed');
+  } else {
+    // Collapse
+    profileSetup.classList.add('collapsed');
+    profileToggle.classList.add('collapsed');
+  }
+}
+
+async function saveProfileData() {
+  // Deprecated - no longer used since profile moved to lobby
+  return;
+}
 
 // ── Filter Chips ──────────────────────────────────────────────────────────────
 function chip(el) {
@@ -1327,6 +1440,35 @@ function selPlan(el) {
   
   // Directly proceed to payment
   buyVIP();
+}
+
+// ── Activate Free Trial ──────────────────────────────────────────────────────
+function activateFreeTrial() {
+  closeVIP();
+  
+  // Simple approach: Direct user to use the bot's /vip command to activate trial
+  // The bot already has a "🎁 Start 3-Day Free Trial" button in the VIP menu
+  showToast('🎁 Activating free trial via bot...');
+  
+  // Close the web app and return to bot
+  if (tg?.close) {
+    // Send a message to prompt user to use bot
+    setTimeout(() => {
+      tg.close();
+    }, 500);
+  }
+  
+  // Open bot's VIP menu where the free trial button exists
+  const botUsername = 'zephrchat_bot'; // Your bot username (without @)
+  const deepLink = `https://t.me/${botUsername}?start=vip`;
+  
+  if (tg?.openTelegramLink) {
+    tg.openTelegramLink(deepLink);
+  } else if (tg?.openLink) {
+    tg.openLink(deepLink);
+  } else {
+    window.open(deepLink, '_blank');
+  }
 }
 
 function buyVIP() {
