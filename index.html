@@ -89,7 +89,7 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .btn-g:hover{border-color:var(--accent);color:var(--accent);}
 
 /* ── LOBBY ── */
-#lobby{background:var(--bg);justify-content:flex-start;}
+#lobby{background:var(--bg);justify-content:flex-start;max-height:100vh;max-height:100dvh;}
 .lobby-hdr{width:100%;padding:13px 17px 11px;
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 .llogo{font-family:'Clash Display',sans-serif;font-weight:700;font-size:22px;
@@ -106,7 +106,8 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
   border-radius:10px;padding:9px 8px;text-align:center;}
 .sn{font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;color:var(--accent-bright);}
 .sl{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-top:1px;}
-.lscroll{flex:1;overflow-y:auto;width:100%;padding:0 17px;scrollbar-width:none;}
+.lscroll{flex:1;overflow-y:auto;width:100%;padding:0 17px;scrollbar-width:none;
+  min-height:0;-webkit-overflow-scrolling:touch;}
 .lscroll::-webkit-scrollbar{display:none;}
 .sec-lbl{font-family:'Clash Display',sans-serif;font-weight:700;font-size:11.5px;
   color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;}
@@ -126,19 +127,19 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .chip.lock::after{content:'👑';font-size:9px;margin-left:3px;}
 
 /* rooms */
-.rooms-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+.rooms-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px;}
 .room-card{background:var(--surface);border:1px solid var(--border);
-  border-radius:14px;padding:14px 13px;cursor:pointer;
+  border-radius:12px;padding:10px 9px;cursor:pointer;
   transition:border-color .2s,transform .15s;position:relative;overflow:hidden;}
 .room-card:active{transform:scale(.97);}
 .room-card.sel{border-color:rgba(0,119,182,.5);background:rgba(0,119,182,.05);}
 .room-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;
   background:radial-gradient(circle at 30% 30%,rgba(0,119,182,.06),transparent);}
 .room-card:hover::before{opacity:1;}
-.re{font-size:22px;margin-bottom:7px;display:block;}
-.rn{font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:2px;}
-.rc{font-size:11px;color:var(--text-dim);}
-.find-wrap{padding-bottom:calc(18px + var(--safe-b));}
+.re{font-size:18px;margin-bottom:5px;display:block;}
+.rn{font-family:'Clash Display',sans-serif;font-weight:700;font-size:11.5px;margin-bottom:2px;line-height:1.2;}
+.rc{font-size:10px;color:var(--text-dim);}
+.find-wrap{padding-bottom:calc(14px + var(--safe-b));padding-top:6px;}
 .btn-find{width:100%;padding:18px;background:linear-gradient(135deg,#0077b6,#00b4d8);
   border:none;border-radius:var(--r);color:#ffffff;
   font-family:'Clash Display',sans-serif;font-weight:800;font-size:17px;cursor:pointer;
@@ -149,6 +150,16 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
   transform:translateX(-100%);transition:transform .6s;}
 .btn-find:hover::before{transform:translateX(100%);}
 .btn-find:active{transform:scale(.97);}
+.btn-vip-lobby{width:100%;padding:18px;background:linear-gradient(135deg,#f5c842,#f59e0b);
+  border:none;border-radius:var(--r);color:#ffffff;margin-top:10px;
+  font-family:'Clash Display',sans-serif;font-weight:800;font-size:17px;cursor:pointer;
+  box-shadow:0 10px 32px rgba(245,200,66,.3);
+  transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;}
+.btn-vip-lobby::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  transform:translateX(-100%);transition:transform .6s;}
+.btn-vip-lobby:hover::before{transform:translateX(100%);}
+.btn-vip-lobby:active{transform:scale(.97);}
 
 /* ── MATCHING ── */
 #matching{justify-content:center;background:var(--bg);gap:26px;}
@@ -332,7 +343,8 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .pcards{display:flex;gap:9px;margin-bottom:18px;}
 .pcard{flex:1;background:var(--surface2);border:1px solid var(--border);
   border-radius:13px;padding:13px 11px;text-align:center;cursor:pointer;
-  transition:border-color .2s;position:relative;}
+  transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
+.pcard:hover{transform:scale(1.01);box-shadow:0 4px 12px rgba(0,119,182,.15);}
 .pcard.hot{border-color:rgba(245,200,66,.45);background:rgba(245,200,66,.04);}
 .pbadge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);
   background:var(--vip);border-radius:50px;padding:3px 10px;
@@ -359,6 +371,46 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 /* subtle paper texture */
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.018'/%3E%3C/svg%3E");opacity:.4;}
+
+/* RESPONSIVE - Small phones */
+@media (max-height: 700px) {
+  .lobby-hdr{padding:10px 17px 8px;}
+  .stats-row{padding:0 17px 10px;}
+  .stat-p{padding:7px 6px;}
+  .sn{font-size:16px;}
+  .filt-grid{gap:7px;margin-bottom:14px;}
+  .filt-row{gap:6px;}
+  .rooms-grid{gap:6px;margin-bottom:12px;}
+  .room-card{padding:8px 7px;}
+  .re{font-size:16px;margin-bottom:4px;}
+  .rn{font-size:10.5px;}
+  .rc{font-size:9px;}
+  .btn-find,.btn-vip-lobby{padding:15px;font-size:16px;}
+  .find-wrap{padding-bottom:calc(12px + var(--safe-b));}
+}
+
+/* RESPONSIVE - Extra small phones */
+@media (max-height: 640px) {
+  .lobby-hdr{padding:8px 15px 6px;}
+  .llogo{font-size:20px;}
+  .stats-row{padding:0 15px 8px;}
+  .stat-p{padding:6px 5px;}
+  .sn{font-size:15px;}
+  .sl{font-size:9px;}
+  .lscroll{padding:0 15px;}
+  .sec-lbl{font-size:10.5px;margin:0 0 8px;}
+  .filt-grid{gap:6px;margin-bottom:12px;}
+  .filt-lbl{font-size:11px;width:55px;}
+  .chip{padding:5px 11px;font-size:11.5px;}
+  .rooms-grid{gap:5px;margin-bottom:10px;}
+  .room-card{padding:7px 6px;border-radius:10px;}
+  .re{font-size:15px;margin-bottom:3px;}
+  .rn{font-size:10px;}
+  .rc{font-size:8.5px;}
+  .btn-find,.btn-vip-lobby{padding:14px;font-size:15px;}
+  .btn-vip-lobby{margin-top:8px;}
+  .find-wrap{padding-top:4px;padding-bottom:calc(10px + var(--safe-b));}
+}
 </style>
 </head>
 <body>
@@ -398,7 +450,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
 <!-- ══ LOBBY ══ -->
 <div class="screen hidden" id="lobby">
   <div class="lobby-hdr">
-    <div class="llogo">zephr.chat</div>
+    <div class="llogo">Zephr Chat</div>
     <div class="lnav">
       <button class="ico-btn" onclick="openVIP()">👑</button>
       <button class="ico-btn" onclick="showToast('⚙️ Settings coming soon')">⚙️</button>
@@ -463,6 +515,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
     </div>
     <div class="find-wrap">
       <button class="btn-find" onclick="startSearch()">⚡ Find a Stranger</button>
+      <button class="btn-vip-lobby" onclick="openVIP()">👑 VIP Subscription</button>
     </div>
   </div>
 </div>
@@ -1255,48 +1308,51 @@ function inviteFriends() {
 }
 
 // ── VIP Modal ─────────────────────────────────────────────────────────────────
-function openVIP() {
-  console.log('openVIP called');
-  const overlay = document.getElementById('vip-overlay');
-  console.log('Overlay element found:', !!overlay);
-  if (overlay) {
-    overlay.classList.add('show');
-    console.log('Added show class. Current classes:', overlay.className);
-  } else {
-    console.error('vip-overlay element not found!');
-  }
-}
-function closeVIP() {
-  console.log('closeVIP called');
-  document.getElementById('vip-overlay').classList.remove('show');
-}
-function closeVIPOut(e) {
-  console.log('closeVIPOut called, target:', e.target, 'target.id:', e.target.id);
-  // Only close if clicking directly on the overlay (the dark background), not on the sheet or its children
-  if (e.target === e.currentTarget) {
-    console.log('Clicked on overlay background - closing');
-    closeVIP();
-  } else {
-    console.log('Clicked inside modal content - not closing');
-  }
-}
+function openVIP()  { document.getElementById('vip-overlay').classList.add('show'); }
+function closeVIP() { document.getElementById('vip-overlay').classList.remove('show'); }
+function closeVIPOut(e) { if (e.target.id === 'vip-overlay') closeVIP(); }
+// Store selected plan globally
+let selectedPlan = 'quarterly'; // Default to 3-month plan (best value)
+
 function selPlan(el) {
-  console.log('selPlan called, element:', el);
-  document.querySelectorAll('.pcard').forEach(c => c.style.borderColor = '');
+  // Visual feedback - highlight selected card
+  document.querySelectorAll('.pcard').forEach(c => {
+    c.style.borderColor = '';
+    c.style.transform = '';
+  });
   el.style.borderColor = 'rgba(245,200,66,.7)';
-  console.log('Plan selected');
-}
-function buyVIP() {
-  console.log('buyVIP called');
-  closeVIP();
-  // Opens bot in Telegram which handles the payment flow
-  if (tg?.openTelegramLink) {
-    console.log('Opening Telegram link for VIP payment');
-    tg.openTelegramLink('https://t.me/YOUR_ACTUAL_BOT_USERNAME?start=vip');
-  } else {
-    console.log('Telegram WebApp not available - would open payment link');
+  el.style.transform = 'scale(1.02)';
+  
+  // Determine which plan was clicked based on price
+  const priceText = el.querySelector('.pamt').textContent;
+  if (priceText.includes('4.99')) {
+    selectedPlan = 'monthly';
+  } else if (priceText.includes('9.99')) {
+    selectedPlan = 'quarterly';
   }
-  showToast('👑 Opening VIP payment in Telegram…');
+  
+  console.log('Selected plan:', selectedPlan); // Debug log
+}
+
+function buyVIP() {
+  closeVIP();
+  
+  // IMPORTANT: Replace YOUR_ACTUAL_BOT_USERNAME with your real bot username
+  // Get it from @BotFather in Telegram (without the @ symbol)
+  const botUsername = '@zephrchat_bot';
+  
+  // Open bot with specific plan parameter
+  const deepLink = `https://t.me/${botUsername}?start=vip_${selectedPlan}`;
+  
+  if (tg?.openTelegramLink) {
+    tg.openTelegramLink(deepLink);
+  } else {
+    // Fallback for testing outside Telegram
+    window.open(deepLink, '_blank');
+  }
+  
+  const planName = selectedPlan === 'monthly' ? 'Monthly' : '3-Month';
+  showToast(`👑 Opening ${planName} VIP payment…`);
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
