@@ -629,7 +629,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
       </div>
     </div>
     <div class="trial-note">✅ 3-day free trial · Cancel anytime · No hidden fees</div>
-    <button class="btn-vip" onclick="buyVIP()">Start Free Trial — 3 Days Free</button>
+    <button class="btn-vip" onclick="buyVIP()">Continue to Payment</button>
     <div style="text-align:center;margin-top:12px">
       <button class="btn-g" style="width:auto;padding:8px 20px;font-size:13px" onclick="closeVIP()">Maybe later</button>
     </div>
@@ -1315,14 +1315,6 @@ function closeVIPOut(e) { if (e.target.id === 'vip-overlay') closeVIP(); }
 let selectedPlan = 'quarterly'; // Default to 3-month plan (best value)
 
 function selPlan(el) {
-  // Visual feedback - highlight selected card
-  document.querySelectorAll('.pcard').forEach(c => {
-    c.style.borderColor = '';
-    c.style.transform = '';
-  });
-  el.style.borderColor = 'rgba(245,200,66,.7)';
-  el.style.transform = 'scale(1.02)';
-  
   // Determine which plan was clicked based on price
   const priceText = el.querySelector('.pamt').textContent;
   if (priceText.includes('4.99')) {
@@ -1331,28 +1323,37 @@ function selPlan(el) {
     selectedPlan = 'quarterly';
   }
   
-  console.log('Selected plan:', selectedPlan); // Debug log
+  console.log('Selected plan:', selectedPlan);
+  
+  // Directly proceed to payment
+  buyVIP();
 }
 
 function buyVIP() {
   closeVIP();
   
-  // IMPORTANT: Replace YOUR_ACTUAL_BOT_USERNAME with your real bot username
-  // Get it from @BotFather in Telegram (without the @ symbol)
-  const botUsername = '@zephrchat_bot';
+  // Get the selected plan (monthly or quarterly)
+  const plan = selectedPlan || 'monthly'; // Default to monthly if nothing selected
   
-  // Open bot with specific plan parameter
-  const deepLink = `https://t.me/${botUsername}?start=vip_${selectedPlan}`;
+  // Get current user info from Telegram WebApp
+  const tgUser = tg?.initDataUnsafe?.user;
+  const userId = tgUser?.id || currentUserId || '000000000';
+  const firstName = tgUser?.first_name || 'User';
   
-  if (tg?.openTelegramLink) {
-    tg.openTelegramLink(deepLink);
+  // Build checkout URL - go directly to Razorpay checkout
+  const checkoutUrl = `${BACKEND_URL}/checkout.html?plan=${plan}&user_id=${userId}&first_name=${encodeURIComponent(firstName)}`;
+  
+  // Open checkout page
+  if (tg?.openLink) {
+    // Use Telegram's openLink for in-app browser
+    tg.openLink(checkoutUrl);
   } else {
     // Fallback for testing outside Telegram
-    window.open(deepLink, '_blank');
+    window.open(checkoutUrl, '_blank');
   }
   
-  const planName = selectedPlan === 'monthly' ? 'Monthly' : '3-Month';
-  showToast(`👑 Opening ${planName} VIP payment…`);
+  const planName = plan === 'monthly' ? 'Monthly ($4.99)' : '3-Month ($9.99)';
+  showToast(`💳 Opening ${planName} payment…`);
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
