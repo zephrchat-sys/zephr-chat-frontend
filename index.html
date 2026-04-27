@@ -267,24 +267,17 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 }
 .h-btn-next:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,119,182,.3);}
 .h-btn-next:active{transform:translateY(0);}
-.ai-bar{width:100%;padding:6px 13px;background:rgba(0,119,182,.06);
-  border-bottom:1px solid rgba(0,119,182,.14);
-  display:flex;align-items:center;gap:7px;
-  font-size:11.5px;color:var(--accent3);flex-shrink:0;}
-.qa-bar{width:100%;padding:8px 13px;display:flex;justify-content:center;align-items:center;flex-shrink:0;
-  background:var(--surface);border-bottom:1px solid var(--border);}
-.qa-bar::-webkit-scrollbar{display:none;}
-.btn-next-chat{padding:10px 24px;background:linear-gradient(135deg,#0077b6,#00b4d8);
-  border:none;border-radius:50px;color:#ffffff;
-  font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;
-  cursor:pointer;box-shadow:0 4px 14px rgba(0,119,182,.2);
-  transition:transform .15s,box-shadow .15s;}
-.btn-next-chat:active{transform:scale(.95);}
-.btn-next-chat:hover{box-shadow:0 6px 18px rgba(0,119,182,.3);}
-.qa-p{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);
-  border-radius:50px;font-size:12px;color:var(--text-dim);cursor:pointer;white-space:nowrap;
-  transition:border-color .15s,color .15s;flex-shrink:0;}
-.qa-p:hover{border-color:var(--accent);color:var(--accent);}
+.report-btn{color:var(--text-dim)!important;}
+.report-btn:hover{color:#e63946!important;background:rgba(230,57,70,.08)!important;}
+.notif-banner{position:fixed;top:0;left:0;right:0;
+  padding:10px 16px;text-align:center;font-size:13px;font-weight:600;
+  z-index:9999;transform:translateY(-100%);
+  transition:transform .3s ease,opacity .3s ease;opacity:0;}
+.notif-banner.show{transform:translateY(0);opacity:1;}
+.notif-banner.success{background:#10b981;color:#fff;}
+.notif-banner.info{background:#0077b6;color:#fff;}
+.notif-banner.warning{background:#f59e0b;color:#fff;}
+.notif-banner.error{background:#ef4444;color:#fff;}
 .msgs{flex:1;overflow-y:auto;width:100%;padding:13px 11px;
   display:flex;flex-direction:column;gap:4px;scroll-behavior:smooth;}
 .msgs::-webkit-scrollbar{width:3px;}
@@ -316,13 +309,6 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .tbub span:nth-child(2){animation-delay:.18s;}
 .tbub span:nth-child(3){animation-delay:.36s;}
 @keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-.dc-banner{position:absolute;top:59px;left:0;right:0;
-  background:rgba(230,57,70,.08);border-bottom:1px solid rgba(230,57,70,.2);
-  padding:7px 13px;display:flex;align-items:center;gap:7px;
-  font-size:12.5px;color:#f88080;z-index:10;
-  transform:translateY(-100%);opacity:0;transition:transform .3s,opacity .3s;}
-.dc-banner.show{transform:none;opacity:1;}
-.dc-lnk{color:inherit;cursor:pointer;text-decoration:underline;margin-left:3px;}
 .inp-bar{width:100%;padding:8px 10px;padding-bottom:calc(8px + var(--safe-b));
   background:var(--surface);border-top:1px solid var(--border);
   display:flex;align-items:flex-end;gap:7px;flex-shrink:0;}
@@ -474,6 +460,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
 </head>
 <body>
 <div id="diag-banner">🔍 Initializing...</div>
+<div class="notif-banner" id="notif-banner"></div>
 
 <!-- ══ ONBOARDING ══ -->
 <div class="screen" id="onboard">
@@ -665,16 +652,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
       <div class="p-status online" id="pst">online</div>
     </div>
     <div class="h-acts">
-      <button class="h-btn" onclick="report()" title="Report user">🚩</button>
+      <button class="h-btn report-btn" onclick="report()" title="Report user">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+          <line x1="4" y1="22" x2="4" y2="15"/>
+        </svg>
+      </button>
       <button class="h-btn-next" onclick="nextChat()" title="Next chat">⏭ Next</button>
     </div>
-  </div>
-  <div class="ai-bar">🛡️ AI moderation active — creeps auto-blocked in real-time</div>
-  <div class="qa-bar" style="display:none;">
-    <!-- Next Chat moved to header -->
-  </div>
-  <div class="dc-banner" id="dcb">
-    👻 Stranger disconnected — <span class="dc-lnk" onclick="startSearch()">Find new?</span>
   </div>
   <div class="msgs" id="msgs"></div>
   <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4" style="display:none" onchange="handleFileSelect(event)">
@@ -1199,15 +1184,15 @@ function onMatched() {
   document.getElementById('pname').textContent = pName;
   document.getElementById('pst').textContent = 'online';
   document.getElementById('pst').className = 'p-status online';
-  document.getElementById('dcb').classList.remove('show');
   document.getElementById('msgs').innerHTML = '';
   document.getElementById('msg-i').disabled = false;
   document.getElementById('snd').style.opacity = '';
   document.getElementById('snd').classList.remove('on');
 
   show('chat');
-  sys('✅ Matched with ' + pName + ' in ' + room);
-  sys('🔒 Anonymous · Zero logs · AI moderation active');
+  showNotification('✅ Matched with ' + pName + ' in ' + room, 'success');
+  setTimeout(() => showNotification('🔒 Anonymous · Zero logs · AI moderation active', 'info'), 3100);
+}
 }
 
 // ── Peer Left / Disconnect ────────────────────────────────────────────────────
@@ -1219,45 +1204,104 @@ function onPeerLeft() {
   if (sd) sd.className = 'sdot away';
   document.getElementById('pst').textContent = 'disconnected';
   document.getElementById('pst').className = 'p-status';
-  sys('👻 ' + pName + ' left the chat');
-  document.getElementById('dcb').classList.add('show');
+  showNotification('👻 ' + pName + ' left the chat', 'warning');
   document.getElementById('msg-i').disabled = true;
   document.getElementById('snd').style.opacity = '.3';
 }
 
 // ── Message Rendering ─────────────────────────────────────────────────────────
+let currentNotification = null;
+
+function showNotification(message, type = 'info') {
+  const banner = document.getElementById('notif-banner');
+  
+  // Hide current notification if exists
+  if (currentNotification) {
+    banner.classList.remove('show');
+    clearTimeout(currentNotification);
+  }
+  
+  // Set message and type
+  banner.textContent = message;
+  banner.className = `notif-banner ${type}`;
+  
+  // Show banner
+  setTimeout(() => banner.classList.add('show'), 10);
+  
+  // Auto-hide after 3 seconds
+  currentNotification = setTimeout(() => {
+    banner.classList.remove('show');
+    currentNotification = null;
+  }, 3000);
+}
+
 function sys(t) {
-  const el = document.createElement('div');
-  el.className = 'sys-m';
-  el.textContent = t;
-  appendMsg(el);
+  // Show as notification banner instead of in chat
+  showNotification(t, 'info');
+}
+
+function showToast(msg) {
+  // Determine type from message
+  let type = 'info';
+  if (msg.includes('✅') || msg.includes('success')) type = 'success';
+  else if (msg.includes('❌') || msg.includes('error') || msg.includes('Failed')) type = 'error';
+  else if (msg.includes('⚠️') || msg.includes('warning')) type = 'warning';
+  
+  showNotification(msg, type);
 }
 
 function bubble(t, me, translated = false) {
-  const row = document.createElement('div');
-  row.className = 'brow ' + (me ? 'me' : 'them');
+  const m = document.getElementById('msgs');
+  const lastMsg = m.lastElementChild;
+  
+  // Check if last message is from same person
+  const sameAuthor = lastMsg && lastMsg.classList.contains('brow') && 
+                     (me ? lastMsg.classList.contains('me') : lastMsg.classList.contains('them'));
+  
+  if (sameAuthor) {
+    // Append to existing bubble
+    const wrap = lastMsg.querySelector('div:not(.av-sm)');
+    const lastBubble = wrap.querySelector('.bubble');
+    
+    // Add line break and new text
+    lastBubble.innerHTML += '<br>' + escapeHtml(t);
+    
+    // Update timestamp
+    const meta = wrap.querySelector('.bmeta');
+    meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
+  } else {
+    // Create new message row
+    const row = document.createElement('div');
+    row.className = 'brow ' + (me ? 'me' : 'them');
 
-  if (!me) {
-    const av = document.createElement('div');
-    av.className = 'av-sm';
-    av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
-    av.textContent = pEmoji;
-    row.appendChild(av);
+    if (!me) {
+      const av = document.createElement('div');
+      av.className = 'av-sm';
+      av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
+      av.textContent = pEmoji;
+      row.appendChild(av);
+    }
+
+    const wrap = document.createElement('div');
+    const bub  = document.createElement('div');
+    bub.className = 'bubble';
+    bub.textContent = t;
+
+    const meta = document.createElement('div');
+    meta.className = 'bmeta';
+    meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
+
+    wrap.appendChild(bub);
+    wrap.appendChild(meta);
+    row.appendChild(wrap);
+    appendMsg(row);
   }
+}
 
-  const wrap = document.createElement('div');
-  const bub  = document.createElement('div');
-  bub.className = 'bubble';
-  bub.textContent = t;
-
-  const meta = document.createElement('div');
-  meta.className = 'bmeta';
-  meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
-
-  wrap.appendChild(bub);
-  wrap.appendChild(meta);
-  row.appendChild(wrap);
-  appendMsg(row);
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function appendMsg(el) {
