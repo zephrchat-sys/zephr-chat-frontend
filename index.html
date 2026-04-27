@@ -245,13 +245,26 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .p-status{font-size:11.5px;color:var(--text-dim);}
 .p-status.online{color:var(--green);}
 .p-status.typing-st{color:var(--accent-bright);}
-.h-acts{display:flex;gap:6px;}
+.h-acts{display:flex;gap:6px;align-items:center;}
 .h-btn{width:32px;height:32px;border-radius:50%;background:transparent;border:none;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;font-size:16px;color:var(--text-dim);
   transition:background .15s,color .15s;}
-.h-btn:hover{background:var(--surface2);}
+.h-btn:hover{background:var(--surface2);color:var(--text);}
 .h-btn.danger:hover{color:var(--red);}
+.h-btn.friend-pending{color:var(--gold);pointer-events:none;}
+.h-btn.friend-added{color:var(--green);pointer-events:none;}
+.h-btn-next{
+  background:linear-gradient(135deg,#0077b6,#00b4d8);
+  border:none;border-radius:20px;padding:6px 14px;
+  color:#fff;font-family:'Clash Display',sans-serif;
+  font-weight:600;font-size:12.5px;letter-spacing:-.2px;
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+  transition:transform .15s,box-shadow .15s;
+  box-shadow:0 2px 8px rgba(0,119,182,.2);
+}
+.h-btn-next:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,119,182,.3);}
+.h-btn-next:active{transform:translateY(0);}
 .ai-bar{width:100%;padding:6px 13px;background:rgba(0,119,182,.06);
   border-bottom:1px solid rgba(0,119,182,.14);
   display:flex;align-items:center;gap:7px;
@@ -650,14 +663,21 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
       <div class="p-status online" id="pst">online</div>
     </div>
     <div class="h-acts">
-      <button class="h-btn" onclick="togTranslate()" title="Auto-translate">🌐</button>
-      <button class="h-btn" onclick="report()" title="Report">🚩</button>
-      <button class="h-btn danger" onclick="nextChat()" title="Next">⏭</button>
+      <button class="h-btn" onclick="sendFriendRequest()" title="Add friend" id="friend-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+      </button>
+      <button class="h-btn" onclick="report()" title="Report user">🚩</button>
+      <button class="h-btn-next" onclick="nextChat()" title="Next chat">⏭ Next</button>
     </div>
   </div>
   <div class="ai-bar">🛡️ AI moderation active — creeps auto-blocked in real-time</div>
-  <div class="qa-bar">
-    <button class="btn-next-chat" onclick="nextChat()">⏭ Next Chat</button>
+  <div class="qa-bar" style="display:none;">
+    <!-- Next Chat moved to header -->
   </div>
   <div class="dc-banner" id="dcb">
     👻 Stranger disconnected — <span class="dc-lnk" onclick="startSearch()">Find new?</span>
@@ -934,6 +954,12 @@ function handleServerMsg(msg) {
       onPeerLeft();
       break;
 
+    case 'friend_request':
+      // Received friend request from peer
+      showToast('👥 Stranger sent you a friend request!');
+      // You can add a modal here to accept/decline
+      break;
+
     case 'session_left':
       break;
 
@@ -1190,6 +1216,19 @@ function onMatched() {
   document.getElementById('msg-i').disabled = false;
   document.getElementById('snd').style.opacity = '';
   document.getElementById('snd').classList.remove('on');
+  
+  // Reset friend request button
+  const friendBtn = document.getElementById('friend-btn');
+  friendBtn.classList.remove('friend-pending', 'friend-added');
+  friendBtn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <line x1="19" y1="8" x2="19" y2="14"/>
+      <line x1="22" y1="11" x2="16" y2="11"/>
+    </svg>
+  `;
+  friendBtn.title = 'Add friend';
 
   show('chat');
   sys('✅ Matched with ' + pName + ' in ' + room);
@@ -1530,6 +1569,51 @@ async function report() {
   }
 }
 
+async function sendFriendRequest() {
+  if (!currentSessionId) { 
+    showToast('❌ No active chat to add friend'); 
+    return; 
+  }
+  
+  const friendBtn = document.getElementById('friend-btn');
+  if (friendBtn.classList.contains('friend-pending') || friendBtn.classList.contains('friend-added')) {
+    return; // Already sent or added
+  }
+  
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/friend-request`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `tma ${initData}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ session_id: currentSessionId })
+    });
+    
+    if (response.ok) {
+      friendBtn.classList.add('friend-pending');
+      friendBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      `;
+      friendBtn.title = 'Friend request sent';
+      showToast('👥 Friend request sent!');
+      
+      // Send message to peer via WebSocket
+      wsSend({
+        type: 'friend_request',
+        session_id: currentSessionId
+      });
+    } else {
+      throw new Error('Failed to send request');
+    }
+  } catch(e) {
+    console.error('Friend request error:', e);
+    showToast('❌ Failed to send friend request');
+  }
+}
+
 function togTranslate() {
   trOn = !trOn;
   showToast(trOn ? '🌐 Auto-translate ON' : '🌐 Auto-translate OFF');
@@ -1661,7 +1745,7 @@ function showToast(msg) {
 // ── GIF Picker ────────────────────────────────────────────────────────────────
 // Giphy API - Free tier allows 42 requests/hour per IP
 // Get your own key at: https://developers.giphy.com/dashboard/
-const GIPHY_API_KEY = '7VmWmmK1HALZCW6aPkMBcGGfvJcFIU6p'; // Giphy public beta key
+const GIPHY_API_KEY = 'Gc7131jiJuvI7IdN0HZ1D7nh0ow5BU6g'; // Giphy public beta key
 let gifSearchTimeout = null;
 
 function openGifPicker() {
