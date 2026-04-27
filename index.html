@@ -1856,7 +1856,28 @@ function restartVoiceRecording() {
 }
 
 async function sendVoiceMessage() {
-  if (!recordedBlob || state !== 'chatting' || !currentSessionId) {
+  console.log('🎤 sendVoiceMessage called, recordedBlob:', recordedBlob);
+  
+  // Ensure recording is stopped
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    console.log('⏹️ Stopping active recording before send');
+    await new Promise((resolve) => {
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        console.log('✅ Recording stopped, blob created:', recordedBlob.size);
+        resolve();
+      };
+      mediaRecorder.stop();
+    });
+  }
+  
+  if (!recordedBlob) {
+    console.error('❌ No recorded blob available');
+    showToast('❌ No recording to send');
+    return;
+  }
+  
+  if (state !== 'chatting' || !currentSessionId) {
     console.error('❌ Voice send blocked:', {
       hasBlob: !!recordedBlob,
       state: state,
