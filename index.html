@@ -1659,7 +1659,9 @@ function showToast(msg) {
 }
 
 // ── GIF Picker ────────────────────────────────────────────────────────────────
-const TENOR_API_KEY = 'AQ.Ab8RN6IsPqz3SzNGfUMbUpoMdFzkHooUrCuH0YGTFUYOnTOUng'; // Tenor public demo key
+// Giphy API - Free tier allows 42 requests/hour per IP
+// Get your own key at: https://developers.giphy.com/dashboard/
+const GIPHY_API_KEY = '7VmWmmK1HALZCW6aPkMBcGGfvJcFIU6p'; // Giphy public beta key
 let gifSearchTimeout = null;
 
 function openGifPicker() {
@@ -1690,18 +1692,20 @@ function searchGifs(query) {
   
   gifSearchTimeout = setTimeout(async () => {
     try {
-      const res = await fetch(`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${TENOR_API_KEY}&client_key=zephr_chat&limit=20&media_filter=gif`);
+      // Giphy API v1 - simple and works client-side
+      const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=20&rating=g`);
       
       if (!res.ok) {
-        console.error('Tenor API error:', res.status, await res.text());
+        console.error('Giphy API error:', res.status, await res.text());
         throw new Error(`API returned ${res.status}`);
       }
       
       const data = await res.json();
       
-      if (data.results && data.results.length > 0) {
-        grid.innerHTML = data.results.map(gif => {
-          const url = gif.media_formats.tinygif.url;
+      if (data.data && data.data.length > 0) {
+        grid.innerHTML = data.data.map(gif => {
+          // Use fixed_width format for optimal loading
+          const url = gif.images.fixed_width.url;
           return `<div style="cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--surface2)" onclick="sendGif('${url}')">
             <img src="${url}" style="width:100%;height:100%;object-fit:cover">
           </div>`;
