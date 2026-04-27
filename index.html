@@ -24,7 +24,11 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
   font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;overflow:hidden;
-  -webkit-tap-highlight-color:transparent;user-select:none;}
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  word-break:normal;word-wrap:normal;white-space:normal;}
+
+/* Fix for Telegram WebView */
+*{word-break:normal !important;}
 
 /* SCREENS */
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;
@@ -289,7 +293,8 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .brow.me{flex-direction:row-reverse;}
 @keyframes bin{from{opacity:0;transform:translateY(7px) scale(.96);}to{opacity:1;transform:none;}}
 .bubble{max-width:75%;padding:9px 13px;border-radius:17px;
-  font-size:14px;line-height:1.52;word-wrap:break-word;overflow-wrap:break-word;font-family:'Plus Jakarta Sans',sans-serif;}
+  font-size:14px;line-height:1.52;word-wrap:break-word;overflow-wrap:break-word;
+  white-space:normal;font-family:'Plus Jakarta Sans',sans-serif;}
 .brow.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px;color:#fff;}
 .brow.them .bubble{background:var(--bubble-them);border:1px solid var(--border);
   border-bottom-left-radius:4px;color:var(--text);}
