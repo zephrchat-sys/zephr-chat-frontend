@@ -1887,6 +1887,10 @@ async function sendVoiceMessage() {
     return;
   }
   
+  // IMPORTANT: Save the blob BEFORE closing modal (which sets recordedBlob = null)
+  const blobToSend = recordedBlob;
+  console.log('💾 Saved blob before closing modal:', blobToSend.size);
+  
   closeVoiceRecorder();
   
   // Show loading indicator
@@ -1894,14 +1898,14 @@ async function sendVoiceMessage() {
   appendMsg(loadingRow);
   
   try {
-    console.log('📤 Starting voice send, blob size:', recordedBlob.size, 'type:', recordedBlob.type);
+    console.log('📤 Starting voice send, blob size:', blobToSend.size, 'type:', blobToSend.type);
     
     // Convert blob to base64
     const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
       reader.onerror = reject;
-      reader.readAsDataURL(recordedBlob);
+      reader.readAsDataURL(blobToSend);
     });
     
     console.log('📤 Base64 converted, length:', base64.length);
