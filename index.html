@@ -1251,11 +1251,9 @@ function showToast(msg) {
 
 function bubble(t, me, translated = false) {
   const m = document.getElementById('msgs');
-  const lastMsg = m.lastElementChild;
   
-  // Check if last message is from same person
-  const sameAuthor = lastMsg && lastMsg.classList.contains('brow') && 
-                     (me ? lastMsg.classList.contains('me') : lastMsg.classList.contains('them'));
+  // DISABLE GROUPING TEMPORARILY FOR DEBUG
+  const sameAuthor = false;
   
   if (sameAuthor) {
     // Append to existing bubble
