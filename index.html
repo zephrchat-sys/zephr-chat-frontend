@@ -124,6 +124,10 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 #lobby{background:var(--bg);justify-content:flex-start;max-height:100vh;max-height:100dvh;}
 .lobby-hdr{width:100%;padding:13px 17px 11px;
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.back-btn{width:40px;height:40px;border-radius:50%;background:var(--surface2);
+  border:none;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text);transition:background .2s;}
+.back-btn:hover{background:var(--surface3);}
 .llogo{font-family:'Clash Display',sans-serif;font-weight:700;font-size:22px;
   letter-spacing:-1px;
   background:linear-gradient(90deg,#03045e,#0077b6,#00b4d8);
@@ -640,6 +644,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
     </div>
     <div class="find-wrap">
       <button class="btn-find" onclick="startSearch()">⚡ Find a Stranger</button>
+      <button class="btn-g" onclick="openFriends()" style="flex:1;margin-bottom:8px;font-size:14px">👥 Friends</button>
       <button class="btn-vip-lobby" onclick="openVIP()">👑 VIP Subscription</button>
     </div>
   </div>
@@ -814,6 +819,63 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
   </div>
 </div>
 
+<!-- ══ FRIENDS LIST SCREEN ══ -->
+<div class="screen hidden" id="friends">
+  <div class="lobby-hdr">
+    <button class="back-btn" onclick="show('lobby')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <div style="flex:1;text-align:center;font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px">👥 Friends</div>
+    <div style="width:40px"></div>
+  </div>
+  
+  <div class="ob-scroll" style="padding-top:16px">
+    <div id="friend-requests-section" style="width:100%;max-width:420px;margin-bottom:24px;display:none">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;color:var(--text);padding:0 26px">
+        📬 Pending Requests (<span id="requests-count">0</span>)
+      </div>
+      <div id="friend-requests-list" style="display:flex;flex-direction:column;gap:8px;padding:0 26px"></div>
+    </div>
+    
+    <div style="width:100%;max-width:420px;margin-bottom:12px;padding:0 26px">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px;color:var(--text)">
+        My Friends (<span id="friends-count">0</span>)
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">
+        Connect with people you've met on Zephr
+      </div>
+    </div>
+    
+    <div id="friends-list" style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px;padding:0 26px">
+      <div style="text-align:center;padding:60px 20px;color:var(--text-dim);font-size:14px">
+        👻 No friends yet<br>
+        <span style="font-size:12px;opacity:.7;display:block;margin-top:8px">Start chatting and send friend requests!</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FRIEND REQUEST NOTIFICATION MODAL ══ -->
+<div class="overlay" id="friend-request-overlay" onclick="closeFriendRequestOut(event)">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:48px;margin-bottom:12px">👥</div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:20px;margin-bottom:6px">Friend Request!</div>
+      <div style="font-size:13px;color:var(--text-dim)" id="friend-request-from">Someone wants to add you as a friend</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-p" onclick="acceptCurrentFriendRequest()" style="flex:1;padding:14px;font-size:15px">✅ Accept</button>
+      <button class="btn-g" onclick="declineCurrentFriendRequest()" style="flex:1;padding:14px;font-size:15px">❌ Decline</button>
+    </div>
+    <div style="text-align:center;margin-top:12px">
+      <button class="btn-g" style="width:auto;padding:8px 20px;font-size:13px" onclick="closeFriendRequest()">Decide Later</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -956,8 +1018,7 @@ function handleServerMsg(msg) {
 
     case 'friend_request':
       // Received friend request from peer
-      showToast('👥 Stranger sent you a friend request!');
-      // You can add a modal here to accept/decline
+      showFriendRequestNotification(msg.session_id);
       break;
 
     case 'session_left':
@@ -988,6 +1049,293 @@ function updateDiag(msg, type = 'error') {
   banner.className = type; // success, warning, error
   if (type === 'success') {
     setTimeout(() => banner.style.display = 'none', 3000);
+  }
+}
+
+// ── Friends System ────────────────────────────────────────────────────────────
+let currentFriendRequestId = null;
+
+async function openFriends() {
+  show('friends');
+  await loadFriendsAndRequests();
+}
+
+async function loadFriendsAndRequests() {
+  try {
+    // Load pending friend requests
+    const requestsRes = await fetch(`${BACKEND_URL}/api/friend-requests/pending`, {
+      headers: { 'Authorization': `tma ${initData}` }
+    });
+    
+    if (requestsRes.ok) {
+      const requestsData = await requestsRes.json();
+      renderFriendRequests(requestsData.requests || []);
+    }
+    
+    // Load friends list
+    const friendsRes = await fetch(`${BACKEND_URL}/api/friends`, {
+      headers: { 'Authorization': `tma ${initData}` }
+    });
+    
+    if (friendsRes.ok) {
+      const friendsData = await friendsRes.json();
+      renderFriendsList(friendsData.friends || []);
+    }
+  } catch (error) {
+    console.error('Error loading friends:', error);
+  }
+}
+
+function renderFriendRequests(requests) {
+  const section = document.getElementById('friend-requests-section');
+  const list = document.getElementById('friend-requests-list');
+  const count = document.getElementById('requests-count');
+  
+  count.textContent = requests.length;
+  
+  if (requests.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  list.innerHTML = requests.map(req => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0077b6,#00b4d8);display:flex;align-items:center;justify-content:center;font-size:24px">
+        👤
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${req.from_user.first_name}</div>
+        <div style="font-size:12px;color:var(--text-dim)">${req.from_user.username ? '@' + req.from_user.username : 'Anonymous'}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="acceptFriendRequestById(${req.request_id})" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">✓</button>
+        <button onclick="declineFriendRequestById(${req.request_id})" style="background:var(--surface2);color:var(--text);border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderFriendsList(friends) {
+  const list = document.getElementById('friends-list');
+  const count = document.getElementById('friends-count');
+  
+  count.textContent = friends.length;
+  
+  if (friends.length === 0) {
+    list.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--text-dim);font-size:14px">
+        👻 No friends yet<br>
+        <span style="font-size:12px;opacity:.7;display:block;margin-top:8px">Start chatting and send friend requests!</span>
+      </div>
+    `;
+    return;
+  }
+  
+  list.innerHTML = friends.map(friend => {
+    const isOnline = friend.is_online;
+    const lastSeen = friend.last_seen ? new Date(friend.last_seen) : null;
+    const timeSince = lastSeen ? getTimeSince(lastSeen) : 'Never';
+    
+    return `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+        <div style="position:relative">
+          <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0077b6,#00b4d8);display:flex;align-items:center;justify-content:center;font-size:24px">
+            👤
+          </div>
+          <div style="position:absolute;bottom:0;right:0;width:14px;height:14px;border-radius:50%;border:2px solid var(--surface);background:${isOnline ? 'var(--green)' : 'var(--text-muted)'}"></div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">${friend.first_name}</div>
+          <div style="font-size:12px;color:var(--text-dim)">${friend.username ? '@' + friend.username : 'Friend'}</div>
+          <div style="font-size:11px;color:${isOnline ? 'var(--green)' : 'var(--text-muted)'};margin-top:2px">
+            ${isOnline ? '🟢 Online' : '⚪ ' + timeSince}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button onclick="startFriendChat(${friend.telegram_id}, '${friend.first_name}')" style="background:var(--accent);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+            💬 Chat
+          </button>
+          <button onclick="removeFriend(${friend.telegram_id}, '${friend.first_name}')" style="background:var(--surface2);color:var(--text-dim);border:none;border-radius:20px;padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer">
+            Remove
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getTimeSince(date) {
+  const seconds = Math.floor((new Date() - date) / 1000);
+  
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+  if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+  if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+  return date.toLocaleDateString();
+}
+
+async function acceptFriendRequestById(requestId) {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/friend-requests/${requestId}/accept`, {
+      method: 'POST',
+      headers: { 'Authorization': `tma ${initData}` }
+    });
+    
+    if (res.ok) {
+      showToast('✅ Friend request accepted!');
+      await loadFriendsAndRequests();
+    } else {
+      throw new Error('Failed to accept');
+    }
+  } catch (error) {
+    console.error('Accept error:', error);
+    showToast('❌ Failed to accept request');
+  }
+}
+
+async function declineFriendRequestById(requestId) {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/friend-requests/${requestId}/decline`, {
+      method: 'POST',
+      headers: { 'Authorization': `tma ${initData}` }
+    });
+    
+    if (res.ok) {
+      showToast('Friend request declined');
+      await loadFriendsAndRequests();
+    } else {
+      throw new Error('Failed to decline');
+    }
+  } catch (error) {
+    console.error('Decline error:', error);
+    showToast('❌ Failed to decline request');
+  }
+}
+
+function showFriendRequestNotification(sessionId) {
+  currentFriendRequestId = sessionId;
+  document.getElementById('friend-request-from').textContent = `${pName} wants to add you as a friend!`;
+  document.getElementById('friend-request-overlay').classList.add('show');
+}
+
+async function acceptCurrentFriendRequest() {
+  if (!currentFriendRequestId) return;
+  
+  try {
+    // Get pending requests to find the request_id
+    const res = await fetch(`${BACKEND_URL}/api/friend-requests/pending`, {
+      headers: { 'Authorization': `tma ${initData}` }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      const request = data.requests.find(r => r.session_id === currentFriendRequestId);
+      if (request) {
+        await acceptFriendRequestById(request.request_id);
+        closeFriendRequest();
+      }
+    }
+  } catch (error) {
+    console.error('Accept error:', error);
+    showToast('❌ Failed to accept request');
+  }
+}
+
+async function declineCurrentFriendRequest() {
+  if (!currentFriendRequestId) return;
+  
+  try {
+    // Get pending requests to find the request_id
+    const res = await fetch(`${BACKEND_URL}/api/friend-requests/pending`, {
+      headers: { 'Authorization': `tma ${initData}` }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      const request = data.requests.find(r => r.session_id === currentFriendRequestId);
+      if (request) {
+        await declineFriendRequestById(request.request_id);
+        closeFriendRequest();
+      }
+    }
+  } catch (error) {
+    console.error('Decline error:', error);
+    showToast('❌ Failed to decline request');
+  }
+}
+
+function closeFriendRequest() {
+  document.getElementById('friend-request-overlay').classList.remove('show');
+  currentFriendRequestId = null;
+}
+
+function closeFriendRequestOut(e) {
+  if (e.target.id === 'friend-request-overlay') closeFriendRequest();
+}
+
+async function startFriendChat(friendId, friendName) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    showToast('❌ Not connected. Please refresh.');
+    return;
+  }
+  
+  // Send friend chat request to backend
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/start-friend-chat`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `tma ${initData}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ friend_id: friendId })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to start chat');
+    }
+    
+    const data = await response.json();
+    
+    // Set up chat session
+    currentSessionId = data.session_id;
+    pName = friendName;
+    pEmoji = '👤';
+    pCol = 'av-p';
+    room = 'Friend Chat';
+    
+    // Show chat screen
+    onMatched();
+    
+    showToast(`💬 Connected with ${friendName}!`);
+  } catch (error) {
+    console.error('Start friend chat error:', error);
+    showToast('❌ ' + error.message);
+  }
+}
+
+async function removeFriend(friendId, friendName) {
+  const confirmed = confirm(`Remove ${friendName} from your friends?`);
+  if (!confirmed) return;
+  
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/friends/${friendId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `tma ${initData}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to remove friend');
+    }
+    
+    showToast(`Removed ${friendName} from friends`);
+    await loadFriendsAndRequests();
+  } catch (error) {
+    console.error('Remove friend error:', error);
+    showToast('❌ Failed to remove friend');
   }
 }
 
