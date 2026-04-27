@@ -904,6 +904,8 @@ function handleServerMsg(msg) {
 
     case 'message':
       // Incoming message from peer
+      console.log('📨 Received message:', msg);
+      console.log('📝 Message text:', msg.text, 'Length:', msg.text?.length);
       hideT();
       if (msg.media_type && msg.media_data) {
         // Media message
@@ -1250,6 +1252,7 @@ function showToast(msg) {
 }
 
 function bubble(t, me, translated = false) {
+  console.log('💬 bubble() called with:', t, 'me:', me, 'length:', t?.length);
   const m = document.getElementById('msgs');
   const lastMsg = m.lastElementChild;
   
