@@ -1690,7 +1690,13 @@ function searchGifs(query) {
   
   gifSearchTimeout = setTimeout(async () => {
     try {
-      const res = await fetch(`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${TENOR_API_KEY}&limit=20&media_filter=gif`);
+      const res = await fetch(`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${TENOR_API_KEY}&client_key=zephr_chat&limit=20&media_filter=gif`);
+      
+      if (!res.ok) {
+        console.error('Tenor API error:', res.status, await res.text());
+        throw new Error(`API returned ${res.status}`);
+      }
+      
       const data = await res.json();
       
       if (data.results && data.results.length > 0) {
