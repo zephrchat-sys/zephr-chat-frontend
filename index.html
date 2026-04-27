@@ -289,7 +289,7 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .brow.me{flex-direction:row-reverse;}
 @keyframes bin{from{opacity:0;transform:translateY(7px) scale(.96);}to{opacity:1;transform:none;}}
 .bubble{max-width:75%;padding:9px 13px;border-radius:17px;
-  font-size:14px;line-height:1.52;word-break:break-word;font-family:'Plus Jakarta Sans',sans-serif;}
+  font-size:14px;line-height:1.52;word-wrap:break-word;overflow-wrap:break-word;font-family:'Plus Jakarta Sans',sans-serif;}
 .brow.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px;color:#fff;}
 .brow.them .bubble{background:var(--bubble-them);border:1px solid var(--border);
   border-bottom-left-radius:4px;color:var(--text);}
@@ -904,8 +904,6 @@ function handleServerMsg(msg) {
 
     case 'message':
       // Incoming message from peer
-      console.log('📨 Received message:', msg);
-      console.log('📝 Message text:', msg.text, 'Length:', msg.text?.length);
       hideT();
       if (msg.media_type && msg.media_data) {
         // Media message
@@ -1252,7 +1250,6 @@ function showToast(msg) {
 }
 
 function bubble(t, me, translated = false) {
-  console.log('💬 bubble() called with:', t, 'me:', me, 'length:', t?.length);
   const m = document.getElementById('msgs');
   const lastMsg = m.lastElementChild;
   
