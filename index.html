@@ -905,6 +905,11 @@ function handleServerMsg(msg) {
 
     case 'message':
       // Incoming message from peer
+      console.log('📨 RAW MESSAGE:', JSON.stringify(msg));
+      console.log('📝 TEXT VALUE:', msg.text);
+      console.log('📏 TEXT LENGTH:', msg.text?.length);
+      console.log('🔤 CHAR CODES:', msg.text?.split('').map((c, i) => `${i}:${c}(${c.charCodeAt(0)})`).join(' '));
+      
       hideT();
       if (msg.media_type && msg.media_data) {
         // Media message
