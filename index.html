@@ -292,7 +292,7 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .brow{display:flex;gap:7px;align-items:flex-end;animation:bin .22s ease;}
 .brow.me{flex-direction:row-reverse;}
 @keyframes bin{from{opacity:0;transform:translateY(7px) scale(.96);}to{opacity:1;transform:none;}}
-.bubble{max-width:75%;padding:9px 13px;border-radius:17px;
+.bubble{max-width:75%;padding:9px 13px;border-radius:17px;display:inline-block;
   font-size:14px;line-height:1.52;word-wrap:break-word;overflow-wrap:break-word;
   white-space:normal;font-family:'Plus Jakarta Sans',sans-serif;}
 .brow.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px;color:#fff;}
@@ -1274,11 +1274,16 @@ function bubble(t, me, translated = false) {
     const wrap = children.find(el => el.querySelector('.bubble'));
     const lastBubble = wrap.querySelector('.bubble');
     
-    // Add line break and new text using DOM nodes (not innerHTML)
+    // Add line break and new text with span wrapper
     const br = document.createElement('br');
-    const textNode = document.createTextNode(t);
+    const textSpan = document.createElement('span');
+    textSpan.style.display = 'inline';
+    textSpan.style.whiteSpace = 'normal';
+    textSpan.style.wordBreak = 'normal';
+    textSpan.textContent = t;
+    
     lastBubble.appendChild(br);
-    lastBubble.appendChild(textNode);
+    lastBubble.appendChild(textSpan);
     
     // Update timestamp
     const meta = wrap.querySelector('.bmeta');
@@ -1299,7 +1304,14 @@ function bubble(t, me, translated = false) {
     const wrap = document.createElement('div');
     const bub  = document.createElement('div');
     bub.className = 'bubble';
-    bub.textContent = t;
+    
+    // Force text to render in a span to prevent Telegram WebView issues
+    const textSpan = document.createElement('span');
+    textSpan.style.display = 'inline';
+    textSpan.style.whiteSpace = 'normal';
+    textSpan.style.wordBreak = 'normal';
+    textSpan.textContent = t;
+    bub.appendChild(textSpan);
 
     const meta = document.createElement('div');
     meta.className = 'bmeta';
