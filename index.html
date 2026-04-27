@@ -1856,7 +1856,15 @@ function restartVoiceRecording() {
 }
 
 async function sendVoiceMessage() {
-  if (!recordedBlob || state !== 'chatting' || !currentSessionId) return;
+  if (!recordedBlob || state !== 'chatting' || !currentSessionId) {
+    console.error('❌ Voice send blocked:', {
+      hasBlob: !!recordedBlob,
+      state: state,
+      hasSession: !!currentSessionId
+    });
+    showToast('❌ Cannot send voice message');
+    return;
+  }
   
   closeVoiceRecorder();
   
@@ -1865,16 +1873,20 @@ async function sendVoiceMessage() {
   appendMsg(loadingRow);
   
   try {
+    console.log('📤 Starting voice send, blob size:', recordedBlob.size, 'type:', recordedBlob.type);
+    
     // Convert blob to base64
-    const base64 = await new Promise((resolve) => {
+    const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
       reader.readAsDataURL(recordedBlob);
     });
     
-    console.log('📤 Sending voice message, size:', recordedBlob.size, 'type:', recordedBlob.type);
+    console.log('📤 Base64 converted, length:', base64.length);
     
     // Send to backend
+    console.log('📤 Sending to:', `${BACKEND_URL}/api/upload-media`);
     const response = await fetch(`${BACKEND_URL}/api/upload-media`, {
       method: 'POST',
       headers: {
@@ -1889,11 +1901,16 @@ async function sendVoiceMessage() {
       })
     });
     
+    console.log('📤 Response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ Upload failed:', response.status, errorText);
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
     }
     
-    console.log('✅ Voice message sent successfully');
+    const result = await response.json();
+    console.log('✅ Voice message sent successfully:', result);
     
     // Replace loading with voice bubble - use createMediaBubble for consistency
     const mediaRow = createMediaBubble(base64, 'audio/webm', true);
@@ -1901,7 +1918,11 @@ async function sendVoiceMessage() {
     showToast('✅ Voice sent');
     
   } catch (error) {
-    console.error('Voice send error:', error);
+    console.error('❌ Voice send error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
     loadingRow.remove();
     showToast('❌ Failed to send voice message');
   }
