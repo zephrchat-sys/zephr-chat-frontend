@@ -707,25 +707,29 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
       <textarea id="msg-i" rows="1" placeholder="Message"
         oninput="onInp()" onkeydown="onKD(event)"></textarea>
       <button class="ia-btn" onclick="triggerFileUpload()" title="Send Photo">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#e63946" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
         </svg>
       </button>
     </div>
-    <button class="snd-btn" id="snd" 
+    <!-- Microphone button - shown when no text -->
+    <button class="snd-btn" id="mic-btn"
       ontouchstart="handleMicTouchStart(event)" 
       ontouchend="handleMicTouchEnd(event)"
       ontouchcancel="handleMicTouchEnd(event)"
       onmousedown="handleMicMouseDown(event)"
       onmouseup="handleMicMouseUp(event)"
       onmouseleave="handleMicMouseUp(event)">
-      <svg class="mic-icon" id="mic-icon" viewBox="0 0 24 24" width="24" height="24">
+      <svg class="mic-icon" viewBox="0 0 24 24" width="24" height="24" fill="white">
         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
         <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
       </svg>
-      <svg class="send-icon" id="send-icon" viewBox="0 0 24 24" style="display:none;">
-        <line x1="22" y1="2" x2="11" y2="13"/>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </button>
+    <!-- Send button - shown when text is present -->
+    <button class="snd-btn" id="send-btn" onclick="sendMsg()" style="display:none;">
+      <svg class="send-icon" viewBox="0 0 24 24" width="20" height="20">
+        <line x1="22" y1="2" x2="11" y2="13" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2" fill="white"/>
       </svg>
     </button>
   </div>
@@ -1439,18 +1443,16 @@ function onInp() {
   grow(i);
   const hasText = i.value.trim().length > 0;
   
-  // Toggle button state
-  document.getElementById('snd').classList.toggle('on', hasText);
+  // Toggle between mic and send buttons
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
   
-  // Switch between mic and send icons
-  const micIcon = document.getElementById('mic-icon');
-  const sendIcon = document.getElementById('send-icon');
   if (hasText) {
-    micIcon.style.display = 'none';
-    sendIcon.style.display = 'block';
+    micBtn.style.display = 'none';
+    sendBtn.style.display = 'flex';
   } else {
-    micIcon.style.display = 'block';
-    sendIcon.style.display = 'none';
+    micBtn.style.display = 'flex';
+    sendBtn.style.display = 'none';
   }
 
   // Send typing indicator to peer (throttled)
@@ -1479,7 +1481,10 @@ function sendMsg() {
   bubble(text, true);
   inp.value = '';
   grow(inp);
-  document.getElementById('snd').classList.remove('on');
+  
+  // Reset to mic button
+  document.getElementById('mic-btn').style.display = 'flex';
+  document.getElementById('send-btn').style.display = 'none';
 
   wsSend({
     type: 'send_message',
@@ -1931,18 +1936,10 @@ let isRecordingVoice = false;
 
 function handleMicTouchStart(e) {
   e.preventDefault();
-  const input = document.getElementById('msg-i');
-  const hasText = input.value.trim().length > 0;
-  
-  if (hasText) {
-    // If there's text, act as send button
-    sendMsg();
-  } else {
-    // Start recording after a brief delay to distinguish from tap
-    micPressTimer = setTimeout(() => {
-      startPressAndHoldRecording();
-    }, 200);
-  }
+  // Start recording after a brief delay to distinguish from tap
+  micPressTimer = setTimeout(() => {
+    startPressAndHoldRecording();
+  }, 200);
 }
 
 function handleMicTouchEnd(e) {
@@ -1957,18 +1954,10 @@ function handleMicTouchEnd(e) {
 }
 
 function handleMicMouseDown(e) {
-  const input = document.getElementById('msg-i');
-  const hasText = input.value.trim().length > 0;
-  
-  if (hasText) {
-    // If there's text, act as send button
-    sendMsg();
-  } else {
-    // Start recording after a brief delay
-    micPressTimer = setTimeout(() => {
-      startPressAndHoldRecording();
-    }, 200);
-  }
+  // Start recording after a brief delay
+  micPressTimer = setTimeout(() => {
+    startPressAndHoldRecording();
+  }, 200);
 }
 
 function handleMicMouseUp(e) {
@@ -1993,7 +1982,7 @@ async function startPressAndHoldRecording() {
     audioChunks = [];
     recordingStartTime = Date.now();
     
-    const btn = document.getElementById('snd');
+    const btn = document.getElementById('mic-btn');
     btn.classList.add('recording');
     
     mediaRecorder = new MediaRecorder(stream);
