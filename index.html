@@ -1632,6 +1632,13 @@ function createMediaBubble(src, type, isMe) {
   // Normalize type (handle empty or malformed MIME types)
   const normalizedType = (type || '').toLowerCase();
   
+  // Ensure src has proper data URL format
+  let audioSrc = src;
+  if (normalizedType.startsWith('audio/') && !src.startsWith('data:')) {
+    // Add data URL prefix if missing
+    audioSrc = `data:${normalizedType};base64,${src}`;
+  }
+  
   // Handle audio/voice messages
   if (normalizedType.startsWith('audio/')) {
     bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
@@ -1641,7 +1648,7 @@ function createMediaBubble(src, type, isMe) {
           <path d="M8 5v14l11-7z"/>
         </svg>
       </div>
-      <audio src="${src}" controls style="flex:1;height:32px"></audio>
+      <audio src="${audioSrc}" controls style="flex:1;height:32px"></audio>
     </div>`;
   }
   // Check if it's an image (including GIF)
@@ -1661,13 +1668,14 @@ function createMediaBubble(src, type, isMe) {
       bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
     } else if (src.startsWith('data:audio/')) {
       bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
+      const fallbackAudioSrc = src;
       bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
         <div style="width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
             <path d="M8 5v14l11-7z"/>
           </svg>
         </div>
-        <audio src="${src}" controls style="flex:1;height:32px"></audio>
+        <audio src="${fallbackAudioSrc}" controls style="flex:1;height:32px"></audio>
       </div>`;
     } else {
       bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
