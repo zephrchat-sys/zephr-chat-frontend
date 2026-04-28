@@ -271,8 +271,8 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 }
 .h-btn-next:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,119,182,.3);}
 .h-btn-next:active{transform:translateY(0);}
-.report-btn{color:var(--text-dim)!important;}
-.report-btn:hover{color:#e63946!important;background:rgba(230,57,70,.08)!important;}
+.report-btn{color:#e63946!important;}
+.report-btn:hover{color:#dc2626!important;background:rgba(230,57,70,.08)!important;}
 .notif-banner{position:fixed;top:59px;left:0;right:0;
   padding:10px 16px;text-align:center;font-size:13px;font-weight:600;
   z-index:100;transform:translateY(-100%);
@@ -707,7 +707,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
       <textarea id="msg-i" rows="1" placeholder="Message"
         oninput="onInp()" onkeydown="onKD(event)"></textarea>
       <button class="ia-btn" onclick="triggerFileUpload()" title="Send Photo">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#e63946" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
         </svg>
       </button>
@@ -1991,6 +1991,7 @@ async function startPressAndHoldRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     isRecordingVoice = true;
     audioChunks = [];
+    recordingStartTime = Date.now();
     
     const btn = document.getElementById('snd');
     btn.classList.add('recording');
@@ -2002,39 +2003,19 @@ async function startPressAndHoldRecording() {
     };
     
     mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
       
-      // Convert to base64 and send
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result.split(',')[1];
-        
-        // Send to backend
-        await fetch(`${BACKEND_URL}/api/upload-media`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `tma ${initData}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            session_id: currentSessionId,
-            file_data: base64,
-            file_type: 'audio/webm',
-            file_name: 'voice.webm'
-          })
-        });
-        
-        showToast('✅ Voice message sent');
-      };
-      reader.readAsDataURL(audioBlob);
-      
+      // Stop all tracks
       stream.getTracks().forEach(track => track.stop());
       isRecordingVoice = false;
       btn.classList.remove('recording');
+      
+      // Show preview overlay
+      showVoicePreview();
     };
     
     mediaRecorder.start();
-    showToast('🎤 Recording...');
+    showToast('🎤 Recording... Release to finish');
   } catch (err) {
     showToast('❌ Microphone access denied');
     isRecordingVoice = false;
@@ -2044,6 +2025,86 @@ async function startPressAndHoldRecording() {
 function stopPressAndHoldRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
+  }
+}
+
+function showVoicePreview() {
+  // Show the voice overlay
+  document.getElementById('voice-overlay').classList.add('show');
+  
+  // Hide recording UI, show playback UI
+  document.getElementById('recording-indicator').style.display = 'none';
+  document.getElementById('voice-playback').style.display = 'block';
+  document.getElementById('voice-action-btn').style.display = 'none';
+  
+  // Set up audio preview
+  const audioPreview = document.getElementById('voice-preview');
+  const audioUrl = URL.createObjectURL(recordedBlob);
+  audioPreview.src = audioUrl;
+}
+
+async function sendVoiceMessage() {
+  if (!recordedBlob) return;
+  
+  // Convert to base64 and send
+  const reader = new FileReader();
+  reader.onloadend = async () => {
+    const base64 = reader.result.split(',')[1];
+    
+    try {
+      // Send to backend
+      await fetch(`${BACKEND_URL}/api/upload-media`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `tma ${initData}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          session_id: currentSessionId,
+          file_data: base64,
+          file_type: 'audio/webm',
+          file_name: 'voice.webm'
+        })
+      });
+      
+      showToast('✅ Voice message sent');
+      closeVoiceRecorder();
+    } catch (err) {
+      showToast('❌ Failed to send voice message');
+    }
+  };
+  reader.readAsDataURL(recordedBlob);
+}
+
+function restartVoiceRecording() {
+  // Reset the UI
+  document.getElementById('voice-playback').style.display = 'none';
+  document.getElementById('voice-action-btn').style.display = 'inline-block';
+  recordedBlob = null;
+  audioChunks = [];
+  
+  // Close overlay - user will press and hold mic button again
+  closeVoiceRecorder();
+}
+
+function closeVoiceRecorder() {
+  document.getElementById('voice-overlay').classList.remove('show');
+  document.getElementById('recording-indicator').style.display = 'none';
+  document.getElementById('voice-playback').style.display = 'none';
+  document.getElementById('voice-action-btn').style.display = 'inline-block';
+  
+  // Clean up
+  const audioPreview = document.getElementById('voice-preview');
+  if (audioPreview.src) {
+    URL.revokeObjectURL(audioPreview.src);
+    audioPreview.src = '';
+  }
+  recordedBlob = null;
+}
+
+function closeVoiceRecorderOut(event) {
+  if (event.target.id === 'voice-overlay') {
+    closeVoiceRecorder();
   }
 }
 
@@ -2060,19 +2121,6 @@ function startVoiceRecording() {
     return;
   }
   document.getElementById('voice-overlay').classList.add('show');
-}
-
-function closeVoiceRecorder() {
-  stopRecording();
-  document.getElementById('voice-overlay').classList.remove('show');
-  document.getElementById('recording-indicator').style.display = 'none';
-  document.getElementById('voice-playback').style.display = 'none';
-  document.getElementById('voice-action-btn').textContent = '🎙️ Start Recording';
-  recordedBlob = null;
-}
-
-function closeVoiceRecorderOut(e) {
-  if (e.target.id === 'voice-overlay') closeVoiceRecorder();
 }
 
 async function toggleVoiceRecording() {
@@ -2134,110 +2182,6 @@ function stopRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
     clearInterval(recordingTimer);
-  }
-}
-
-function restartVoiceRecording() {
-  document.getElementById('voice-playback').style.display = 'none';
-  recordedBlob = null;
-  startRecording();
-}
-
-async function sendVoiceMessage() {
-  console.log('🎤 sendVoiceMessage called, recordedBlob:', recordedBlob);
-  
-  // Ensure recording is stopped
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    console.log('⏹️ Stopping active recording before send');
-    await new Promise((resolve) => {
-      mediaRecorder.onstop = () => {
-        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        console.log('✅ Recording stopped, blob created:', recordedBlob.size);
-        resolve();
-      };
-      mediaRecorder.stop();
-    });
-  }
-  
-  if (!recordedBlob) {
-    console.error('❌ No recorded blob available');
-    showToast('❌ No recording to send');
-    return;
-  }
-  
-  if (state !== 'chatting' || !currentSessionId) {
-    console.error('❌ Voice send blocked:', {
-      hasBlob: !!recordedBlob,
-      state: state,
-      hasSession: !!currentSessionId
-    });
-    showToast('❌ Cannot send voice message');
-    return;
-  }
-  
-  // IMPORTANT: Save the blob BEFORE closing modal (which sets recordedBlob = null)
-  const blobToSend = recordedBlob;
-  console.log('💾 Saved blob before closing modal:', blobToSend.size);
-  
-  closeVoiceRecorder();
-  
-  // Show loading indicator
-  const loadingRow = createMediaLoadingBubble();
-  appendMsg(loadingRow);
-  
-  try {
-    console.log('📤 Starting voice send, blob size:', blobToSend.size, 'type:', blobToSend.type);
-    
-    // Convert blob to base64
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blobToSend);
-    });
-    
-    console.log('📤 Base64 converted, length:', base64.length);
-    
-    // Send to backend
-    console.log('📤 Sending to:', `${BACKEND_URL}/api/upload-media`);
-    const response = await fetch(`${BACKEND_URL}/api/upload-media`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `tma ${initData}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        session_id: currentSessionId,
-        file_data: base64,
-        file_type: 'audio/webm',
-        file_name: 'voice.webm'
-      })
-    });
-    
-    console.log('📤 Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Upload failed:', response.status, errorText);
-      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-    }
-    
-    const result = await response.json();
-    console.log('✅ Voice message sent successfully:', result);
-    
-    // Replace loading with voice bubble - use createMediaBubble for consistency
-    const mediaRow = createMediaBubble(base64, 'audio/webm', true);
-    loadingRow.replaceWith(mediaRow);
-    showToast('✅ Voice sent');
-    
-  } catch (error) {
-    console.error('❌ Voice send error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack
-    });
-    loadingRow.remove();
-    showToast('❌ Failed to send voice message');
   }
 }
 
