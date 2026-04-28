@@ -271,12 +271,14 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 }
 .h-btn-next:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,119,182,.3);}
 .h-btn-next:active{transform:translateY(0);}
-.report-btn{color:var(--text-dim)!important;}
-.report-btn:hover{color:#e63946!important;background:rgba(230,57,70,.08)!important;}
+.report-btn{color:#e63946!important;}
+.report-btn:hover{color:#dc2626!important;background:rgba(230,57,70,.08)!important;}
 .notif-banner{position:fixed;top:59px;left:0;right:0;
-  padding:10px 16px;text-align:center;font-size:13px;font-weight:600;
-  z-index:100;transform:translateY(-100%);
-  transition:transform .3s ease,opacity .3s ease;opacity:0;}
+  padding:14px 20px;text-align:center;font-size:15px;font-weight:600;
+  z-index:1000;transform:translateY(-100%);
+  transition:transform .3s ease,opacity .3s ease;opacity:0;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  border-bottom:2px solid rgba(255,255,255,0.2);}
 .notif-banner.show{transform:translateY(0);opacity:1;}
 .notif-banner.success{background:#10b981;color:#fff;}
 .notif-banner.info{background:#0077b6;color:#fff;}
@@ -289,21 +291,46 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .sys-m{align-self:center;background:var(--surface2);border:1px solid var(--border);
   border-radius:50px;padding:4px 13px;font-size:11px;color:var(--text-dim);
   letter-spacing:.02em;margin:5px 0;}
-.brow{display:flex;gap:7px;align-items:flex-end;animation:bin .22s ease;}
-.brow.me{flex-direction:row-reverse;}
+
+/* Message group container - WhatsApp style */
+.msg-group{display:flex;gap:7px;align-items:flex-end;margin-bottom:8px;animation:bin .22s ease;}
+.msg-group.me{flex-direction:row-reverse;}
 @keyframes bin{from{opacity:0;transform:translateY(7px) scale(.96);}to{opacity:1;transform:none;}}
-.bubble{max-width:75%;padding:9px 13px;border-radius:17px;display:inline-block;
+
+/* Message bubbles container */
+.bubbles-container{display:flex;flex-direction:column;gap:2px;max-width:75%;}
+.msg-group.me .bubbles-container{align-items:flex-end;}
+.msg-group.them .bubbles-container{align-items:flex-start;}
+
+/* Individual bubble */
+.bubble{padding:9px 13px;border-radius:17px;display:inline-block;
   font-size:14px;line-height:1.52;word-wrap:break-word;overflow-wrap:break-word;
-  white-space:normal;font-family:'Plus Jakarta Sans',sans-serif;}
-.brow.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px;color:#fff;}
-.brow.them .bubble{background:var(--bubble-them);border:1px solid var(--border);
-  border-bottom-left-radius:4px;color:var(--text);}
+  white-space:normal;font-family:'Plus Jakarta Sans',sans-serif;
+  max-width:100%;}
+
+/* Me bubbles - all rounded except last one (bottom-right corner) */
+.msg-group.me .bubble{background:var(--bubble-me);color:#fff;border-radius:17px;}
+.msg-group.me .bubble:last-child{border-bottom-right-radius:4px;}
+
+/* Them bubbles - all rounded except last one (bottom-left corner) */
+.msg-group.them .bubble{background:var(--bubble-them);border:1px solid var(--border);
+  color:var(--text);border-radius:17px;}
+.msg-group.them .bubble:last-child{border-bottom-left-radius:4px;}
+
+/* Metadata - only on last bubble */
 .bmeta{font-size:10px;margin-top:3px;display:flex;align-items:center;gap:4px;}
-.brow.me .bmeta{justify-content:flex-end;color:rgba(255,255,255,.55);}
-.brow.them .bmeta{color:var(--text-muted);}
+.msg-group.me .bmeta{justify-content:flex-end;color:rgba(255,255,255,.55);}
+.msg-group.them .bmeta{color:var(--text-muted);}
 .tr-badge{color:var(--accent3);opacity:.8;}
+
+/* Avatar - only shows at bottom of message group */
 .av-sm{width:26px;height:26px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;font-size:13px;}
+.msg-group.me .av-sm{display:none;}
+
+/* Legacy support for old .brow class (for backward compatibility) */
+.brow{display:flex;gap:7px;align-items:flex-end;animation:bin .22s ease;}
+.brow.me{flex-direction:row-reverse;}
 .brow.me .av-sm{display:none;}
 .trow{display:flex;gap:7px;align-items:flex-end;}
 .tbub{padding:10px 14px;background:var(--bubble-them);border:1px solid var(--border);
@@ -314,34 +341,39 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .tbub span:nth-child(2){animation-delay:.18s;}
 .tbub span:nth-child(3){animation-delay:.36s;}
 @keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-.inp-bar{width:100%;padding:10px 12px;padding-bottom:calc(10px + var(--safe-b));
-  background:#f7f8fa;border-top:1px solid #e4e6eb;
-  display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.inp-wrap{flex:1;background:#fff;border:1px solid #dfe1e5;
-  border-radius:24px;padding:9px 14px;display:flex;align-items:center;
-  transition:all .2s;box-shadow:0 1px 2px rgba(0,0,0,.04);}
-.inp-wrap:focus-within{border-color:#0077b6;box-shadow:0 2px 6px rgba(0,119,182,.12);}
-.ia-btn{width:40px;height:40px;border-radius:50%;background:#fff;
-  border:1px solid #e4e6eb;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:18px;color:var(--text-dim);transition:all .15s;
-  box-shadow:0 1px 2px rgba(0,0,0,.04);}
-.ia-btn:hover{background:#f0f2f5;border-color:#d0d2d7;}
+.inp-bar{width:100%;padding:8px 10px;padding-bottom:calc(8px + var(--safe-b));
+  background:#f0f2f5;border-top:1px solid #e4e6eb;
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
+.inp-wrap{flex:1;max-width:100%;background:#fff;border:1px solid #d1d7db;
+  border-radius:22px;padding:6px 12px 6px 6px;display:flex;align-items:center;gap:6px;
+  transition:all .2s;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+.inp-wrap:focus-within{border-color:#0077b6;box-shadow:0 0 0 2px rgba(0,119,182,.1);}
+.ia-btn{width:34px;height:34px;border-radius:50%;background:transparent;
+  border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  cursor:pointer;font-size:22px;color:#54656f;transition:all .15s;}
+.ia-btn:hover{background:#f0f2f5;}
 .ia-btn:active{transform:scale(.92);}
-#msg-i{flex:1;background:none;border:none;outline:none;color:var(--text);
+.gif-badge-btn{border:1.5px solid #d1d7db;background:#fff;width:40px;border-radius:18px;}
+.gif-badge-btn:hover{background:#f7f8fa;}
+#msg-i{flex:1;background:none;border:none;outline:none;color:#3b4a54;
   font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;line-height:1.4;
-  resize:none;max-height:110px;scrollbar-width:none;}
-#msg-i::placeholder{color:var(--text-muted);}
+  resize:none;max-height:110px;scrollbar-width:none;padding:7px 6px;min-height:20px;}
+#msg-i::placeholder{color:#8696a0;}
 #msg-i:disabled{opacity:.5;}
-.snd-btn{width:40px;height:40px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,#25d366,#20c65a);
+.snd-btn{width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#0077b6,#00b4d8);
   border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 6px rgba(37,211,102,.3);
-  transition:all .15s;opacity:.4;}
-.snd-btn.on{opacity:1;box-shadow:0 3px 10px rgba(37,211,102,.4);}
+  box-shadow:0 2px 5px rgba(0,119,182,.3);
+  transition:all .15s;opacity:1;position:relative;
+  touch-action:none;user-select:none;-webkit-user-select:none;}
+.snd-btn.on{opacity:1;box-shadow:0 3px 8px rgba(0,119,182,.4);background:linear-gradient(135deg,#0077b6,#00b4d8);}
 .snd-btn:active{transform:scale(.9);}
-.snd-btn svg{width:17px;height:17px;fill:none;stroke:#ffffff;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;}
+.snd-btn svg{width:20px;height:20px;transition:all .2s;}
+.snd-btn .mic-icon{fill:white;}
+.snd-btn .send-icon{fill:none;stroke:#ffffff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.snd-btn.recording{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 3px 8px rgba(239,68,68,.5);animation:pulse-rec .8s ease-in-out infinite;}
+@keyframes pulse-rec{0%,100%{box-shadow:0 3px 8px rgba(239,68,68,.5);}50%{box-shadow:0 3px 12px rgba(239,68,68,.7);}}
 
 /* ── POST-CHAT ── */
 #postchat{justify-content:center;padding:28px;}
@@ -617,11 +649,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
         <span class="filt-lbl">Country</span>
         <div class="chips" data-filter="country">
           <div class="chip on" onclick="chip(this)">Any</div>
+          <div class="chip lock" onclick="openVIP()">USA</div>
           <div class="chip lock" onclick="openVIP()">India</div>
-          <div class="chip lock" onclick="openVIP()">United States</div>
-          <div class="chip lock" onclick="openVIP()">United Kingdom</div>
-          <div class="chip lock" onclick="openVIP()">Canada</div>
-          <div class="chip lock" onclick="openVIP()">Australia</div>
+          <div class="chip lock" onclick="openVIP()">UK</div>
+          <div class="chip lock" onclick="openVIP()">Europe</div>
         </div>
       </div>
     </div>
@@ -671,15 +702,37 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
   <div class="msgs" id="msgs"></div>
   <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4" style="display:none" onchange="handleFileSelect(event)">
   <div class="inp-bar">
-    <button class="ia-btn" onclick="openGifPicker()" title="Send GIF">🎬</button>
-    <button class="ia-btn" onclick="startVoiceRecording()" title="Voice Message">🎤</button>
-    <button class="ia-btn" onclick="triggerFileUpload()" title="Send Photo">📷</button>
     <div class="inp-wrap">
-      <textarea id="msg-i" rows="1" placeholder="Message…"
+      <button class="ia-btn gif-badge-btn" onclick="openGifPicker()" title="Send GIF">
+        <span style="font-size:11px;font-weight:600;color:#667781;font-family:system-ui,-apple-system,sans-serif;letter-spacing:0.3px;">GIF</span>
+      </button>
+      <textarea id="msg-i" rows="1" placeholder="Message"
         oninput="onInp()" onkeydown="onKD(event)"></textarea>
+      <button class="ia-btn" onclick="triggerFileUpload()" title="Send Photo">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+        </svg>
+      </button>
     </div>
-    <button class="snd-btn" id="snd" onclick="sendMsg()">
-      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <!-- Microphone button - shown when no text -->
+    <button class="snd-btn" id="mic-btn"
+      ontouchstart="handleMicTouchStart(event)" 
+      ontouchend="handleMicTouchEnd(event)"
+      ontouchcancel="handleMicTouchEnd(event)"
+      onmousedown="handleMicMouseDown(event)"
+      onmouseup="handleMicMouseUp(event)"
+      onmouseleave="handleMicMouseUp(event)">
+      <svg class="mic-icon" viewBox="0 0 24 24" width="24" height="24" fill="white">
+        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+      </svg>
+    </button>
+    <!-- Send button - shown when text is present -->
+    <button class="snd-btn" id="send-btn" onclick="sendMsg()" style="display:none;">
+      <svg class="send-icon" viewBox="0 0 24 24" width="20" height="20">
+        <line x1="22" y1="2" x2="11" y2="13" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2" fill="white"/>
+      </svg>
     </button>
   </div>
 </div>
@@ -1153,27 +1206,7 @@ function selRoom(el, name) {
 // ── Search / Matching ─────────────────────────────────────────────────────────
 function getActiveChip(groupSelector) {
   const active = document.querySelector(`${groupSelector} .chip.on`);
-  if (!active) return 'any';
-  
-  const text = active.textContent.trim();
-  const filterType = document.querySelector(groupSelector).getAttribute('data-filter');
-  
-  // For age and language, convert to lowercase with underscores
-  if (filterType === 'age' || filterType === 'lang') {
-    return text.toLowerCase().replace(/\s+/g, '_');
-  }
-  
-  // For gender and country, keep as-is but lowercase (except country which needs exact match)
-  if (filterType === 'gender') {
-    return text.toLowerCase();
-  }
-  
-  // For country, return exact text (matches database values)
-  if (filterType === 'country') {
-    return text === 'Any' ? 'any' : text;
-  }
-  
-  return text.toLowerCase();
+  return active ? active.textContent.trim().toLowerCase().replace(/\s+/g, '_') : 'any';
 }
 
 function startSearch() {
@@ -1182,22 +1215,14 @@ function startSearch() {
   show('matching');
 
   const topicSlug = room.split(' ')[0].toLowerCase();
-  const searchParams = {
+  wsSend({
     type: 'join_queue',
     topic: topicSlug,
     language: getActiveChip('[data-filter="lang"]') || 'any',
     age_group: getActiveChip('[data-filter="age"]') || 'any',
     gender: getActiveChip('[data-filter="gender"]') || 'any',
     country: getActiveChip('[data-filter="country"]') || 'any',
-  };
-  
-  console.log('🔍 Starting search with filters:', searchParams);
-  console.log('   Language:', searchParams.language);
-  console.log('   Age Group:', searchParams.age_group);
-  console.log('   Gender Filter:', searchParams.gender);
-  console.log('   Country Filter:', searchParams.country);
-  
-  wsSend(searchParams);
+  });
 }
 
 function cancelSearch() {
@@ -1226,8 +1251,14 @@ function onMatched() {
   document.getElementById('pst').className = 'p-status online';
   document.getElementById('msgs').innerHTML = '';
   document.getElementById('msg-i').disabled = false;
-  document.getElementById('snd').style.opacity = '';
-  document.getElementById('snd').classList.remove('on');
+  
+  // Reset buttons to mic state
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
+  if (micBtn) micBtn.style.opacity = '';
+  if (sendBtn) sendBtn.style.opacity = '';
+  if (micBtn) micBtn.style.display = 'flex';
+  if (sendBtn) sendBtn.style.display = 'none';
 
   show('chat');
   showNotification('✅ Matched with ' + pName + ' in ' + room, 'success');
@@ -1245,13 +1276,18 @@ function onPeerLeft() {
   document.getElementById('pst').className = 'p-status';
   showNotification('👻 ' + pName + ' left the chat', 'warning');
   document.getElementById('msg-i').disabled = true;
-  document.getElementById('snd').style.opacity = '.3';
+  
+  // Disable buttons
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
+  if (micBtn) micBtn.style.opacity = '.3';
+  if (sendBtn) sendBtn.style.opacity = '.3';
 }
 
 // ── Message Rendering ─────────────────────────────────────────────────────────
 let currentNotification = null;
 
-function showNotification(message, type = 'info') {
+function showNotification(message, type = 'info', duration = 15000) {
   const banner = document.getElementById('notif-banner');
   
   // Hide current notification if exists
@@ -1267,89 +1303,103 @@ function showNotification(message, type = 'info') {
   // Show banner
   setTimeout(() => banner.classList.add('show'), 10);
   
-  // Auto-hide after 3 seconds
+  // Auto-hide after specified duration (default 15 seconds)
   currentNotification = setTimeout(() => {
     banner.classList.remove('show');
     currentNotification = null;
-  }, 3000);
+  }, duration);
 }
 
 function sys(t) {
   // Show as notification banner instead of in chat
-  showNotification(t, 'info');
+  showNotification(t, 'info', 15000);
 }
 
-function showToast(msg) {
+function showToast(msg, duration = 15000) {
   // Determine type from message
   let type = 'info';
-  if (msg.includes('✅') || msg.includes('success')) type = 'success';
+  if (msg.includes('✅') || msg.includes('success') || msg.includes('🎉')) type = 'success';
   else if (msg.includes('❌') || msg.includes('error') || msg.includes('Failed')) type = 'error';
   else if (msg.includes('⚠️') || msg.includes('warning')) type = 'warning';
   
-  showNotification(msg, type);
+  showNotification(msg, type, duration);
 }
 
 function bubble(t, me, translated = false) {
   const m = document.getElementById('msgs');
-  const lastMsg = m.lastElementChild;
+  let lastMsg = m.lastElementChild;
   
-  // Check if last message is from same person
-  const sameAuthor = lastMsg && lastMsg.classList.contains('brow') && 
+  // Skip typing indicator if it's the last element
+  if (lastMsg && lastMsg.classList.contains('trow')) {
+    lastMsg = lastMsg.previousElementSibling;
+  }
+  
+  // Check if last message is from same person and is a message group
+  const sameAuthor = lastMsg && lastMsg.classList.contains('msg-group') && 
                      (me ? lastMsg.classList.contains('me') : lastMsg.classList.contains('them'));
   
   if (sameAuthor) {
-    // Append to existing bubble
-    const children = Array.from(lastMsg.children);
-    const wrap = children.find(el => el.querySelector('.bubble'));
-    const lastBubble = wrap.querySelector('.bubble');
+    // Add to existing message group
+    const bubblesContainer = lastMsg.querySelector('.bubbles-container');
     
-    // Add line break and new text with span wrapper
-    const br = document.createElement('br');
-    const textSpan = document.createElement('span');
-    textSpan.style.display = 'inline';
-    textSpan.style.whiteSpace = 'normal';
-    textSpan.style.wordBreak = 'normal';
-    textSpan.textContent = t;
-    
-    lastBubble.appendChild(br);
-    lastBubble.appendChild(textSpan);
-    
-    // Update timestamp
-    const meta = wrap.querySelector('.bmeta');
-    meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
-  } else {
-    // Create new message row
-    const row = document.createElement('div');
-    row.className = 'brow ' + (me ? 'me' : 'them');
-
-    if (!me) {
-      const av = document.createElement('div');
-      av.className = 'av-sm';
-      av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
-      av.textContent = pEmoji;
-      row.appendChild(av);
-    }
-
-    const wrap = document.createElement('div');
-    const bub  = document.createElement('div');
+    // Create new bubble
+    const bub = document.createElement('div');
     bub.className = 'bubble';
     
-    // Force text to render in a span to prevent Telegram WebView issues
     const textSpan = document.createElement('span');
     textSpan.style.display = 'inline';
     textSpan.style.whiteSpace = 'normal';
     textSpan.style.wordBreak = 'normal';
     textSpan.textContent = t;
     bub.appendChild(textSpan);
+    
+    // Update timestamp on the container's metadata
+    const meta = bubblesContainer.querySelector('.bmeta');
+    if (meta) {
+      meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
+    }
+    
+    // Insert new bubble before the metadata
+    bubblesContainer.insertBefore(bub, meta);
+  } else {
+    // Create new message group
+    const group = document.createElement('div');
+    group.className = 'msg-group ' + (me ? 'me' : 'them');
 
+    // Add avatar for "them" messages
+    if (!me) {
+      const av = document.createElement('div');
+      av.className = 'av-sm';
+      av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
+      av.textContent = pEmoji;
+      group.appendChild(av);
+    }
+
+    // Create bubbles container
+    const bubblesContainer = document.createElement('div');
+    bubblesContainer.className = 'bubbles-container';
+    
+    // Create first bubble
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    
+    const textSpan = document.createElement('span');
+    textSpan.style.display = 'inline';
+    textSpan.style.whiteSpace = 'normal';
+    textSpan.style.wordBreak = 'normal';
+    textSpan.textContent = t;
+    bub.appendChild(textSpan);
+    
+    bubblesContainer.appendChild(bub);
+
+    // Add metadata
     const meta = document.createElement('div');
     meta.className = 'bmeta';
     meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
+    bubblesContainer.appendChild(meta);
 
-    wrap.appendChild(bub);
-    wrap.appendChild(meta);
-    row.appendChild(wrap);
-    appendMsg(row);
+    group.appendChild(bubblesContainer);
+    appendMsg(group);
   }
 }
 
@@ -1409,7 +1459,19 @@ let typingSent = false;
 function onInp() {
   const i = document.getElementById('msg-i');
   grow(i);
-  document.getElementById('snd').classList.toggle('on', i.value.trim().length > 0);
+  const hasText = i.value.trim().length > 0;
+  
+  // Toggle between mic and send buttons
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
+  
+  if (hasText) {
+    micBtn.style.display = 'none';
+    sendBtn.style.display = 'flex';
+  } else {
+    micBtn.style.display = 'flex';
+    sendBtn.style.display = 'none';
+  }
 
   // Send typing indicator to peer (throttled)
   if (!typingSent && state === 'chatting' && currentSessionId) {
@@ -1437,7 +1499,10 @@ function sendMsg() {
   bubble(text, true);
   inp.value = '';
   grow(inp);
-  document.getElementById('snd').classList.remove('on');
+  
+  // Reset to mic button
+  document.getElementById('mic-btn').style.display = 'flex';
+  document.getElementById('send-btn').style.display = 'none';
 
   wsSend({
     type: 'send_message',
@@ -1546,79 +1611,47 @@ function createMediaLoadingBubble() {
 }
 
 function createMediaBubble(src, type, isMe) {
-  const row = document.createElement('div');
-  row.className = 'brow ' + (isMe ? 'me' : 'them');
+  const group = document.createElement('div');
+  group.className = 'msg-group ' + (isMe ? 'me' : 'them');
   
   if (!isMe) {
     const av = document.createElement('div');
     av.className = 'av-sm';
     av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
     av.textContent = pEmoji;
-    row.appendChild(av);
+    group.appendChild(av);
   }
   
-  const wrap = document.createElement('div');
+  const bubblesContainer = document.createElement('div');
+  bubblesContainer.className = 'bubbles-container';
+  
   const bub = document.createElement('div');
   bub.className = 'bubble';
   
   // Debug log
   console.log('📊 Creating media bubble - Type:', type);
-  console.log('📊 Source preview:', src?.substring(0, 100) + '...');
   
   // Normalize type (handle empty or malformed MIME types)
   const normalizedType = (type || '').toLowerCase();
   
-  // Prepare audio source with proper data URL format
+  // Ensure src has proper data URL format
   let audioSrc = src;
-  if (normalizedType.startsWith('audio/')) {
-    if (!src.startsWith('data:')) {
-      // Backend sent raw base64, add data URL prefix
-      audioSrc = `data:${normalizedType};base64,${src}`;
-      console.log('📊 Added data URL prefix for audio');
-    }
+  if (normalizedType.startsWith('audio/') && !src.startsWith('data:')) {
+    // Add data URL prefix if missing
+    audioSrc = `data:${normalizedType};base64,${src}`;
   }
   
   // Handle audio/voice messages
   if (normalizedType.startsWith('audio/')) {
-    bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:200px;';
-    
-    // Create container
-    const container = document.createElement('div');
-    container.style.cssText = 'display:flex;align-items:center;gap:8px';
-    
-    // Create play button icon
-    const playIcon = document.createElement('div');
-    playIcon.style.cssText = 'width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
-    playIcon.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
-    
-    // Create audio element
-    const audioEl = document.createElement('audio');
-    audioEl.controls = true;
-    audioEl.preload = 'metadata';
-    audioEl.style.cssText = 'flex:1;height:32px;outline:none';
-    
-    // Set source after element is created
-    setTimeout(() => {
-      audioEl.src = audioSrc;
-      console.log('📊 Audio element created, src length:', audioSrc.length);
-    }, 0);
-    
-    // Error handler
-    audioEl.addEventListener('error', function(e) {
-      console.error('❌ Audio error:', e);
-      console.error('Error code:', audioEl.error?.code);
-      console.error('Error message:', audioEl.error?.message);
-      container.innerHTML = '<div style="color:#ef4444;font-size:11px;padding:4px">⚠️ Audio playback failed</div>';
-    });
-    
-    // Success handler
-    audioEl.addEventListener('loadedmetadata', function() {
-      console.log('✅ Audio loaded, duration:', audioEl.duration + 's');
-    });
-    
-    container.appendChild(playIcon);
-    container.appendChild(audioEl);
-    bub.appendChild(container);
+    bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
+    bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+      <div style="width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
+      <audio src="${audioSrc}" controls style="flex:1;height:32px"></audio>
+    </div>`;
   }
   // Check if it's an image (including GIF)
   else if (normalizedType.startsWith('image/') || normalizedType.includes('gif')) {
@@ -1636,35 +1669,31 @@ function createMediaBubble(src, type, isMe) {
       bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
       bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
     } else if (src.startsWith('data:audio/')) {
-      // Fallback audio handling (same as main)
-      bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:200px;';
-      const container = document.createElement('div');
-      container.style.cssText = 'display:flex;align-items:center;gap:8px';
-      const playIcon = document.createElement('div');
-      playIcon.style.cssText = 'width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
-      playIcon.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
-      const audioEl = document.createElement('audio');
-      audioEl.controls = true;
-      audioEl.preload = 'metadata';
-      audioEl.style.cssText = 'flex:1;height:32px;outline:none';
-      audioEl.src = src;
-      container.appendChild(playIcon);
-      container.appendChild(audioEl);
-      bub.appendChild(container);
+      bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
+      const fallbackAudioSrc = src;
+      bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+        <audio src="${fallbackAudioSrc}" controls style="flex:1;height:32px"></audio>
+      </div>`;
     } else {
       bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
       bub.innerHTML = `<div style="padding:12px;color:var(--text-dim);">📎 Unsupported file type: ${type}</div>`;
     }
   }
   
+  bubblesContainer.appendChild(bub);
+  
   const meta = document.createElement('div');
   meta.className = 'bmeta';
   meta.textContent = nowStr();
+  bubblesContainer.appendChild(meta);
   
-  wrap.appendChild(bub);
-  wrap.appendChild(meta);
-  row.appendChild(wrap);
-  return row;
+  group.appendChild(bubblesContainer);
+  return group;
 }
 
 // ── Chat Actions ──────────────────────────────────────────────────────────────
@@ -1676,7 +1705,13 @@ function nextChat() {
   hideT();
   state = 'lobby';
   document.getElementById('msg-i').disabled = false;
-  document.getElementById('snd').style.opacity = '';
+  
+  // Reset buttons
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
+  if (micBtn) micBtn.style.opacity = '';
+  if (sendBtn) sendBtn.style.opacity = '';
+  
   document.querySelectorAll('.star').forEach(s => s.classList.remove('lit'));
   show('postchat');
 }
@@ -1764,31 +1799,88 @@ function selPlan(el) {
 }
 
 // ── Activate Free Trial ──────────────────────────────────────────────────────
-function activateFreeTrial() {
-  closeVIP();
-  
-  // Simple approach: Direct user to use the bot's /vip command to activate trial
-  // The bot already has a "🎁 Start 3-Day Free Trial" button in the VIP menu
-  showToast('🎁 Activating free trial via bot...');
-  
-  // Close the web app and return to bot
-  if (tg?.close) {
-    // Send a message to prompt user to use bot
+async function activateFreeTrial() {
+  try {
+    showToast('🎁 Activating your free trial...', 3000);
+    
+    console.log('🎁 Trial activation started');
+    console.log('📡 Backend URL:', BACKEND_URL);
+    
+    const response = await fetch(`${BACKEND_URL}/api/activate-trial`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `tma ${initData}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📥 Response status:', response.status);
+    
+    let data;
+    try {
+      data = await response.json();
+      console.log('📦 Response data:', data);
+    } catch (parseError) {
+      console.error('❌ Failed to parse response:', parseError);
+      throw new Error('Invalid response from server');
+    }
+    
+    if (!response.ok) {
+      console.log('⚠️ Request failed with status:', response.status);
+      console.log('⚠️ Error detail:', data.detail);
+      
+      if (response.status === 400) {
+        if (data.detail && data.detail.includes('already used')) {
+          showToast('⚠️ You have already used your free trial');
+        } else if (data.detail && data.detail.includes('active VIP')) {
+          showToast('✨ You already have active VIP!');
+        } else {
+          showToast('⚠️ ' + (data.detail || 'Cannot activate trial'));
+        }
+      } else if (response.status === 404) {
+        showToast('❌ User not found. Please restart the app.');
+      } else if (response.status === 403) {
+        showToast('❌ Authentication failed. Please restart the app.');
+      } else {
+        showToast('❌ Error: ' + (data.detail || `Server error (${response.status})`));
+      }
+      closeVIP();
+      return;
+    }
+    
+    // Success!
+    console.log('✅ Trial activated successfully!');
+    closeVIP();
+    showToast('🎉 3-day VIP trial activated!');
+    
+    // Show additional success notification
     setTimeout(() => {
-      tg.close();
-    }, 500);
-  }
-  
-  // Open bot's VIP menu where the free trial button exists
-  const botUsername = 'zephrchat_bot'; // Your bot username (without @)
-  const deepLink = `https://t.me/${botUsername}?start=vip`;
-  
-  if (tg?.openTelegramLink) {
-    tg.openTelegramLink(deepLink);
-  } else if (tg?.openLink) {
-    tg.openLink(deepLink);
-  } else {
-    window.open(deepLink, '_blank');
+      showNotification('✨ VIP Trial Active - Enjoy priority matching, filters & more!', 'success');
+    }, 1000);
+    
+    // Reload user data to update VIP status
+    setTimeout(() => {
+      console.log('🔄 Reloading page to update VIP status...');
+      location.reload();
+    }, 2000);
+    
+  } catch (error) {
+    console.error('❌ Trial activation error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    // Show specific error message
+    if (error.message.includes('Failed to fetch')) {
+      showToast('❌ Network error. Please check your connection and try again.');
+    } else if (error.message.includes('Invalid response')) {
+      showToast('❌ Server error. Please try again later.');
+    } else {
+      showToast('❌ ' + error.message);
+    }
+    closeVIP();
   }
 }
 
@@ -1938,6 +2030,180 @@ async function sendGif(gifUrl) {
   }
 }
 
+// ── Mic Button Handlers (Press & Hold) ───────────────────────────────────────
+let micPressTimer = null;
+let isRecordingVoice = false;
+
+function handleMicTouchStart(e) {
+  e.preventDefault();
+  // Start recording after a brief delay to distinguish from tap
+  micPressTimer = setTimeout(() => {
+    startPressAndHoldRecording();
+  }, 200);
+}
+
+function handleMicTouchEnd(e) {
+  e.preventDefault();
+  if (micPressTimer) {
+    clearTimeout(micPressTimer);
+    micPressTimer = null;
+  }
+  if (isRecordingVoice) {
+    stopPressAndHoldRecording();
+  }
+}
+
+function handleMicMouseDown(e) {
+  // Start recording after a brief delay
+  micPressTimer = setTimeout(() => {
+    startPressAndHoldRecording();
+  }, 200);
+}
+
+function handleMicMouseUp(e) {
+  if (micPressTimer) {
+    clearTimeout(micPressTimer);
+    micPressTimer = null;
+  }
+  if (isRecordingVoice) {
+    stopPressAndHoldRecording();
+  }
+}
+
+async function startPressAndHoldRecording() {
+  if (state !== 'chatting') {
+    showToast('⚠️ Start a chat first');
+    return;
+  }
+  
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    isRecordingVoice = true;
+    audioChunks = [];
+    recordingStartTime = Date.now();
+    
+    const btn = document.getElementById('mic-btn');
+    btn.classList.add('recording');
+    
+    mediaRecorder = new MediaRecorder(stream);
+    
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunks.push(e.data);
+    };
+    
+    mediaRecorder.onstop = async () => {
+      recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      
+      // Stop all tracks
+      stream.getTracks().forEach(track => track.stop());
+      isRecordingVoice = false;
+      btn.classList.remove('recording');
+      
+      // Show preview overlay
+      showVoicePreview();
+    };
+    
+    mediaRecorder.start();
+    showToast('🎤 Recording... Release to finish');
+  } catch (err) {
+    showToast('❌ Microphone access denied');
+    isRecordingVoice = false;
+  }
+}
+
+function stopPressAndHoldRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+}
+
+function showVoicePreview() {
+  // Show the voice overlay
+  document.getElementById('voice-overlay').classList.add('show');
+  
+  // Hide recording UI, show playback UI
+  document.getElementById('recording-indicator').style.display = 'none';
+  document.getElementById('voice-playback').style.display = 'block';
+  document.getElementById('voice-action-btn').style.display = 'none';
+  
+  // Set up audio preview
+  const audioPreview = document.getElementById('voice-preview');
+  const audioUrl = URL.createObjectURL(recordedBlob);
+  audioPreview.src = audioUrl;
+}
+
+async function sendVoiceMessage() {
+  if (!recordedBlob) return;
+  
+  // Convert to base64
+  const reader = new FileReader();
+  reader.onloadend = async () => {
+    const base64 = reader.result;
+    
+    // Show voice bubble immediately on sender's end
+    const mediaRow = createMediaBubble(base64, 'audio/webm', true);
+    appendMsg(mediaRow);
+    
+    try {
+      // Send to backend (remove data URL prefix for backend)
+      const base64Data = base64.split(',')[1];
+      await fetch(`${BACKEND_URL}/api/upload-media`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `tma ${initData}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          session_id: currentSessionId,
+          file_data: base64Data,
+          file_type: 'audio/webm',
+          file_name: 'voice.webm'
+        })
+      });
+      
+      showToast('✅ Voice message sent');
+      closeVoiceRecorder();
+    } catch (err) {
+      showToast('❌ Failed to send voice message');
+      // Remove the bubble if sending failed
+      mediaRow.remove();
+    }
+  };
+  reader.readAsDataURL(recordedBlob);
+}
+
+function restartVoiceRecording() {
+  // Reset the UI
+  document.getElementById('voice-playback').style.display = 'none';
+  document.getElementById('voice-action-btn').style.display = 'inline-block';
+  recordedBlob = null;
+  audioChunks = [];
+  
+  // Close overlay - user will press and hold mic button again
+  closeVoiceRecorder();
+}
+
+function closeVoiceRecorder() {
+  document.getElementById('voice-overlay').classList.remove('show');
+  document.getElementById('recording-indicator').style.display = 'none';
+  document.getElementById('voice-playback').style.display = 'none';
+  document.getElementById('voice-action-btn').style.display = 'inline-block';
+  
+  // Clean up
+  const audioPreview = document.getElementById('voice-preview');
+  if (audioPreview.src) {
+    URL.revokeObjectURL(audioPreview.src);
+    audioPreview.src = '';
+  }
+  recordedBlob = null;
+}
+
+function closeVoiceRecorderOut(event) {
+  if (event.target.id === 'voice-overlay') {
+    closeVoiceRecorder();
+  }
+}
+
 // ── Voice Recording ───────────────────────────────────────────────────────────
 let mediaRecorder = null;
 let audioChunks = [];
@@ -1951,19 +2217,6 @@ function startVoiceRecording() {
     return;
   }
   document.getElementById('voice-overlay').classList.add('show');
-}
-
-function closeVoiceRecorder() {
-  stopRecording();
-  document.getElementById('voice-overlay').classList.remove('show');
-  document.getElementById('recording-indicator').style.display = 'none';
-  document.getElementById('voice-playback').style.display = 'none';
-  document.getElementById('voice-action-btn').textContent = '🎙️ Start Recording';
-  recordedBlob = null;
-}
-
-function closeVoiceRecorderOut(e) {
-  if (e.target.id === 'voice-overlay') closeVoiceRecorder();
 }
 
 async function toggleVoiceRecording() {
@@ -2025,110 +2278,6 @@ function stopRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
     clearInterval(recordingTimer);
-  }
-}
-
-function restartVoiceRecording() {
-  document.getElementById('voice-playback').style.display = 'none';
-  recordedBlob = null;
-  startRecording();
-}
-
-async function sendVoiceMessage() {
-  console.log('🎤 sendVoiceMessage called, recordedBlob:', recordedBlob);
-  
-  // Ensure recording is stopped
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    console.log('⏹️ Stopping active recording before send');
-    await new Promise((resolve) => {
-      mediaRecorder.onstop = () => {
-        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        console.log('✅ Recording stopped, blob created:', recordedBlob.size);
-        resolve();
-      };
-      mediaRecorder.stop();
-    });
-  }
-  
-  if (!recordedBlob) {
-    console.error('❌ No recorded blob available');
-    showToast('❌ No recording to send');
-    return;
-  }
-  
-  if (state !== 'chatting' || !currentSessionId) {
-    console.error('❌ Voice send blocked:', {
-      hasBlob: !!recordedBlob,
-      state: state,
-      hasSession: !!currentSessionId
-    });
-    showToast('❌ Cannot send voice message');
-    return;
-  }
-  
-  // IMPORTANT: Save the blob BEFORE closing modal (which sets recordedBlob = null)
-  const blobToSend = recordedBlob;
-  console.log('💾 Saved blob before closing modal:', blobToSend.size);
-  
-  closeVoiceRecorder();
-  
-  // Show loading indicator
-  const loadingRow = createMediaLoadingBubble();
-  appendMsg(loadingRow);
-  
-  try {
-    console.log('📤 Starting voice send, blob size:', blobToSend.size, 'type:', blobToSend.type);
-    
-    // Convert blob to base64
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blobToSend);
-    });
-    
-    console.log('📤 Base64 converted, length:', base64.length);
-    
-    // Send to backend
-    console.log('📤 Sending to:', `${BACKEND_URL}/api/upload-media`);
-    const response = await fetch(`${BACKEND_URL}/api/upload-media`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `tma ${initData}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        session_id: currentSessionId,
-        file_data: base64,
-        file_type: 'audio/webm',
-        file_name: 'voice.webm'
-      })
-    });
-    
-    console.log('📤 Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Upload failed:', response.status, errorText);
-      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-    }
-    
-    const result = await response.json();
-    console.log('✅ Voice message sent successfully:', result);
-    
-    // Replace loading with voice bubble - use createMediaBubble for consistency
-    const mediaRow = createMediaBubble(base64, 'audio/webm', true);
-    loadingRow.replaceWith(mediaRow);
-    showToast('✅ Voice sent');
-    
-  } catch (error) {
-    console.error('❌ Voice send error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack
-    });
-    loadingRow.remove();
-    showToast('❌ Failed to send voice message');
   }
 }
 
