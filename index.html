@@ -1797,31 +1797,52 @@ function selPlan(el) {
 }
 
 // ── Activate Free Trial ──────────────────────────────────────────────────────
-function activateFreeTrial() {
-  closeVIP();
-  
-  // Simple approach: Direct user to use the bot's /vip command to activate trial
-  // The bot already has a "🎁 Start 3-Day Free Trial" button in the VIP menu
-  showToast('🎁 Activating free trial via bot...');
-  
-  // Close the web app and return to bot
-  if (tg?.close) {
-    // Send a message to prompt user to use bot
+async function activateFreeTrial() {
+  try {
+    showToast('🎁 Activating your free trial...');
+    
+    const response = await fetch(`${BACKEND_URL}/api/activate-trial`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `tma ${initData}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 400) {
+        if (data.detail.includes('already used')) {
+          showToast('⚠️ You have already used your free trial');
+        } else if (data.detail.includes('active VIP')) {
+          showToast('✨ You already have active VIP!');
+        } else {
+          showToast('⚠️ ' + data.detail);
+        }
+      } else {
+        throw new Error(data.detail || 'Failed to activate trial');
+      }
+      closeVIP();
+      return;
+    }
+    
+    // Success!
+    closeVIP();
+    showToast('🎉 3-day VIP trial activated!');
+    
+    // Show success notification
+    showNotification('✨ VIP Trial Active - Enjoy priority matching, filters & more!', 'success');
+    
+    // Reload user data to update VIP status
     setTimeout(() => {
-      tg.close();
-    }, 500);
-  }
-  
-  // Open bot's VIP menu where the free trial button exists
-  const botUsername = 'zephrchat_bot'; // Your bot username (without @)
-  const deepLink = `https://t.me/${botUsername}?start=vip`;
-  
-  if (tg?.openTelegramLink) {
-    tg.openTelegramLink(deepLink);
-  } else if (tg?.openLink) {
-    tg.openLink(deepLink);
-  } else {
-    window.open(deepLink, '_blank');
+      location.reload();
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Trial activation error:', error);
+    showToast('❌ Failed to activate trial. Please try again.');
+    closeVIP();
   }
 }
 
