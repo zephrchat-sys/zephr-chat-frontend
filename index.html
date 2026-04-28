@@ -289,21 +289,46 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .sys-m{align-self:center;background:var(--surface2);border:1px solid var(--border);
   border-radius:50px;padding:4px 13px;font-size:11px;color:var(--text-dim);
   letter-spacing:.02em;margin:5px 0;}
-.brow{display:flex;gap:7px;align-items:flex-end;animation:bin .22s ease;}
-.brow.me{flex-direction:row-reverse;}
+
+/* Message group container - WhatsApp style */
+.msg-group{display:flex;gap:7px;align-items:flex-end;margin-bottom:8px;animation:bin .22s ease;}
+.msg-group.me{flex-direction:row-reverse;}
 @keyframes bin{from{opacity:0;transform:translateY(7px) scale(.96);}to{opacity:1;transform:none;}}
-.bubble{max-width:75%;padding:9px 13px;border-radius:17px;display:inline-block;
+
+/* Message bubbles container */
+.bubbles-container{display:flex;flex-direction:column;gap:2px;max-width:75%;}
+.msg-group.me .bubbles-container{align-items:flex-end;}
+.msg-group.them .bubbles-container{align-items:flex-start;}
+
+/* Individual bubble */
+.bubble{padding:9px 13px;border-radius:17px;display:inline-block;
   font-size:14px;line-height:1.52;word-wrap:break-word;overflow-wrap:break-word;
-  white-space:normal;font-family:'Plus Jakarta Sans',sans-serif;}
-.brow.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px;color:#fff;}
-.brow.them .bubble{background:var(--bubble-them);border:1px solid var(--border);
-  border-bottom-left-radius:4px;color:var(--text);}
+  white-space:normal;font-family:'Plus Jakarta Sans',sans-serif;
+  max-width:100%;}
+
+/* Me bubbles - all rounded except last one (bottom-right corner) */
+.msg-group.me .bubble{background:var(--bubble-me);color:#fff;border-radius:17px;}
+.msg-group.me .bubble:last-child{border-bottom-right-radius:4px;}
+
+/* Them bubbles - all rounded except last one (bottom-left corner) */
+.msg-group.them .bubble{background:var(--bubble-them);border:1px solid var(--border);
+  color:var(--text);border-radius:17px;}
+.msg-group.them .bubble:last-child{border-bottom-left-radius:4px;}
+
+/* Metadata - only on last bubble */
 .bmeta{font-size:10px;margin-top:3px;display:flex;align-items:center;gap:4px;}
-.brow.me .bmeta{justify-content:flex-end;color:rgba(255,255,255,.55);}
-.brow.them .bmeta{color:var(--text-muted);}
+.msg-group.me .bmeta{justify-content:flex-end;color:rgba(255,255,255,.55);}
+.msg-group.them .bmeta{color:var(--text-muted);}
 .tr-badge{color:var(--accent3);opacity:.8;}
+
+/* Avatar - only shows at bottom of message group */
 .av-sm{width:26px;height:26px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;font-size:13px;}
+.msg-group.me .av-sm{display:none;}
+
+/* Legacy support for old .brow class (for backward compatibility) */
+.brow{display:flex;gap:7px;align-items:flex-end;animation:bin .22s ease;}
+.brow.me{flex-direction:row-reverse;}
 .brow.me .av-sm{display:none;}
 .trow{display:flex;gap:7px;align-items:flex-end;}
 .tbub{padding:10px 14px;background:var(--bubble-them);border:1px solid var(--border);
@@ -1264,63 +1289,72 @@ function bubble(t, me, translated = false) {
   const m = document.getElementById('msgs');
   const lastMsg = m.lastElementChild;
   
-  // Check if last message is from same person
-  const sameAuthor = lastMsg && lastMsg.classList.contains('brow') && 
+  // Check if last message is from same person and is a message group
+  const sameAuthor = lastMsg && lastMsg.classList.contains('msg-group') && 
                      (me ? lastMsg.classList.contains('me') : lastMsg.classList.contains('them'));
   
   if (sameAuthor) {
-    // Append to existing bubble
-    const children = Array.from(lastMsg.children);
-    const wrap = children.find(el => el.querySelector('.bubble'));
-    const lastBubble = wrap.querySelector('.bubble');
+    // Add to existing message group
+    const bubblesContainer = lastMsg.querySelector('.bubbles-container');
     
-    // Add line break and new text with span wrapper
-    const br = document.createElement('br');
-    const textSpan = document.createElement('span');
-    textSpan.style.display = 'inline';
-    textSpan.style.whiteSpace = 'normal';
-    textSpan.style.wordBreak = 'normal';
-    textSpan.textContent = t;
-    
-    lastBubble.appendChild(br);
-    lastBubble.appendChild(textSpan);
-    
-    // Update timestamp
-    const meta = wrap.querySelector('.bmeta');
-    meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
-  } else {
-    // Create new message row
-    const row = document.createElement('div');
-    row.className = 'brow ' + (me ? 'me' : 'them');
-
-    if (!me) {
-      const av = document.createElement('div');
-      av.className = 'av-sm';
-      av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
-      av.textContent = pEmoji;
-      row.appendChild(av);
-    }
-
-    const wrap = document.createElement('div');
-    const bub  = document.createElement('div');
+    // Create new bubble
+    const bub = document.createElement('div');
     bub.className = 'bubble';
     
-    // Force text to render in a span to prevent Telegram WebView issues
     const textSpan = document.createElement('span');
     textSpan.style.display = 'inline';
     textSpan.style.whiteSpace = 'normal';
     textSpan.style.wordBreak = 'normal';
     textSpan.textContent = t;
     bub.appendChild(textSpan);
+    
+    // Update timestamp on the container's metadata
+    const meta = bubblesContainer.querySelector('.bmeta');
+    if (meta) {
+      meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
+    }
+    
+    // Insert new bubble before the metadata
+    bubblesContainer.insertBefore(bub, meta);
+  } else {
+    // Create new message group
+    const group = document.createElement('div');
+    group.className = 'msg-group ' + (me ? 'me' : 'them');
 
+    // Add avatar for "them" messages
+    if (!me) {
+      const av = document.createElement('div');
+      av.className = 'av-sm';
+      av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
+      av.textContent = pEmoji;
+      group.appendChild(av);
+    }
+
+    // Create bubbles container
+    const bubblesContainer = document.createElement('div');
+    bubblesContainer.className = 'bubbles-container';
+    
+    // Create first bubble
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    
+    const textSpan = document.createElement('span');
+    textSpan.style.display = 'inline';
+    textSpan.style.whiteSpace = 'normal';
+    textSpan.style.wordBreak = 'normal';
+    textSpan.textContent = t;
+    bub.appendChild(textSpan);
+    
+    bubblesContainer.appendChild(bub);
+
+    // Add metadata
     const meta = document.createElement('div');
     meta.className = 'bmeta';
     meta.innerHTML = nowStr() + (translated ? '<span class="tr-badge"> 🌐 translated</span>' : '');
+    bubblesContainer.appendChild(meta);
 
-    wrap.appendChild(bub);
-    wrap.appendChild(meta);
-    row.appendChild(wrap);
-    appendMsg(row);
+    group.appendChild(bubblesContainer);
+    appendMsg(group);
   }
 }
 
