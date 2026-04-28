@@ -1563,17 +1563,62 @@ function createMediaBubble(src, type, isMe) {
   
   // Debug log
   console.log('📊 Creating media bubble - Type:', type);
+  console.log('📊 Source preview:', src?.substring(0, 100) + '...');
   
   // Normalize type (handle empty or malformed MIME types)
   const normalizedType = (type || '').toLowerCase();
   
+  // Prepare audio source with proper data URL format
+  let audioSrc = src;
+  if (normalizedType.startsWith('audio/')) {
+    if (!src.startsWith('data:')) {
+      // Backend sent raw base64, add data URL prefix
+      audioSrc = `data:${normalizedType};base64,${src}`;
+      console.log('📊 Added data URL prefix for audio');
+    }
+  }
+  
   // Handle audio/voice messages
   if (normalizedType.startsWith('audio/')) {
-    bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
-    bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
-      <div style="font-size:18px">🎤</div>
-      <audio src="${src}" controls style="flex:1;height:32px"></audio>
-    </div>`;
+    bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:200px;';
+    
+    // Create container
+    const container = document.createElement('div');
+    container.style.cssText = 'display:flex;align-items:center;gap:8px';
+    
+    // Create play button icon
+    const playIcon = document.createElement('div');
+    playIcon.style.cssText = 'width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+    playIcon.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
+    
+    // Create audio element
+    const audioEl = document.createElement('audio');
+    audioEl.controls = true;
+    audioEl.preload = 'metadata';
+    audioEl.style.cssText = 'flex:1;height:32px;outline:none';
+    
+    // Set source after element is created
+    setTimeout(() => {
+      audioEl.src = audioSrc;
+      console.log('📊 Audio element created, src length:', audioSrc.length);
+    }, 0);
+    
+    // Error handler
+    audioEl.addEventListener('error', function(e) {
+      console.error('❌ Audio error:', e);
+      console.error('Error code:', audioEl.error?.code);
+      console.error('Error message:', audioEl.error?.message);
+      container.innerHTML = '<div style="color:#ef4444;font-size:11px;padding:4px">⚠️ Audio playback failed</div>';
+    });
+    
+    // Success handler
+    audioEl.addEventListener('loadedmetadata', function() {
+      console.log('✅ Audio loaded, duration:', audioEl.duration + 's');
+    });
+    
+    container.appendChild(playIcon);
+    container.appendChild(audioEl);
+    bub.appendChild(container);
   }
   // Check if it's an image (including GIF)
   else if (normalizedType.startsWith('image/') || normalizedType.includes('gif')) {
@@ -1591,11 +1636,21 @@ function createMediaBubble(src, type, isMe) {
       bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
       bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
     } else if (src.startsWith('data:audio/')) {
-      bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
-      bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
-        <div style="font-size:18px">🎤</div>
-        <audio src="${src}" controls style="flex:1;height:32px"></audio>
-      </div>`;
+      // Fallback audio handling (same as main)
+      bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:200px;';
+      const container = document.createElement('div');
+      container.style.cssText = 'display:flex;align-items:center;gap:8px';
+      const playIcon = document.createElement('div');
+      playIcon.style.cssText = 'width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+      playIcon.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
+      const audioEl = document.createElement('audio');
+      audioEl.controls = true;
+      audioEl.preload = 'metadata';
+      audioEl.style.cssText = 'flex:1;height:32px;outline:none';
+      audioEl.src = src;
+      container.appendChild(playIcon);
+      container.appendChild(audioEl);
+      bub.appendChild(container);
     } else {
       bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
       bub.innerHTML = `<div style="padding:12px;color:var(--text-dim);">📎 Unsupported file type: ${type}</div>`;
