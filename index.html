@@ -1249,8 +1249,14 @@ function onMatched() {
   document.getElementById('pst').className = 'p-status online';
   document.getElementById('msgs').innerHTML = '';
   document.getElementById('msg-i').disabled = false;
-  document.getElementById('snd').style.opacity = '';
-  document.getElementById('snd').classList.remove('on');
+  
+  // Reset buttons to mic state
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
+  if (micBtn) micBtn.style.opacity = '';
+  if (sendBtn) sendBtn.style.opacity = '';
+  if (micBtn) micBtn.style.display = 'flex';
+  if (sendBtn) sendBtn.style.display = 'none';
 
   show('chat');
   showNotification('✅ Matched with ' + pName + ' in ' + room, 'success');
@@ -1268,7 +1274,12 @@ function onPeerLeft() {
   document.getElementById('pst').className = 'p-status';
   showNotification('👻 ' + pName + ' left the chat', 'warning');
   document.getElementById('msg-i').disabled = true;
-  document.getElementById('snd').style.opacity = '.3';
+  
+  // Disable buttons
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
+  if (micBtn) micBtn.style.opacity = '.3';
+  if (sendBtn) sendBtn.style.opacity = '.3';
 }
 
 // ── Message Rendering ─────────────────────────────────────────────────────────
@@ -1668,7 +1679,13 @@ function nextChat() {
   hideT();
   state = 'lobby';
   document.getElementById('msg-i').disabled = false;
-  document.getElementById('snd').style.opacity = '';
+  
+  // Reset buttons
+  const micBtn = document.getElementById('mic-btn');
+  const sendBtn = document.getElementById('send-btn');
+  if (micBtn) micBtn.style.opacity = '';
+  if (sendBtn) sendBtn.style.opacity = '';
+  
   document.querySelectorAll('.star').forEach(s => s.classList.remove('lit'));
   show('postchat');
 }
