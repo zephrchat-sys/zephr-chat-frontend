@@ -1325,7 +1325,12 @@ function showToast(msg) {
 
 function bubble(t, me, translated = false) {
   const m = document.getElementById('msgs');
-  const lastMsg = m.lastElementChild;
+  let lastMsg = m.lastElementChild;
+  
+  // Skip typing indicator if it's the last element
+  if (lastMsg && lastMsg.classList.contains('trow')) {
+    lastMsg = lastMsg.previousElementSibling;
+  }
   
   // Check if last message is from same person and is a message group
   const sameAuthor = lastMsg && lastMsg.classList.contains('msg-group') && 
@@ -1604,18 +1609,20 @@ function createMediaLoadingBubble() {
 }
 
 function createMediaBubble(src, type, isMe) {
-  const row = document.createElement('div');
-  row.className = 'brow ' + (isMe ? 'me' : 'them');
+  const group = document.createElement('div');
+  group.className = 'msg-group ' + (isMe ? 'me' : 'them');
   
   if (!isMe) {
     const av = document.createElement('div');
     av.className = 'av-sm';
     av.style.background = AVATAR_GRADS[pCol] || AVATAR_GRADS['av-p'];
     av.textContent = pEmoji;
-    row.appendChild(av);
+    group.appendChild(av);
   }
   
-  const wrap = document.createElement('div');
+  const bubblesContainer = document.createElement('div');
+  bubblesContainer.className = 'bubbles-container';
+  
   const bub = document.createElement('div');
   bub.className = 'bubble';
   
@@ -1629,7 +1636,11 @@ function createMediaBubble(src, type, isMe) {
   if (normalizedType.startsWith('audio/')) {
     bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
     bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
-      <div style="font-size:18px">🎤</div>
+      <div style="width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
       <audio src="${src}" controls style="flex:1;height:32px"></audio>
     </div>`;
   }
@@ -1651,7 +1662,11 @@ function createMediaBubble(src, type, isMe) {
     } else if (src.startsWith('data:audio/')) {
       bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
       bub.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
-        <div style="font-size:18px">🎤</div>
+        <div style="width:32px;height:32px;background:#3b4a54;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
         <audio src="${src}" controls style="flex:1;height:32px"></audio>
       </div>`;
     } else {
@@ -1660,14 +1675,15 @@ function createMediaBubble(src, type, isMe) {
     }
   }
   
+  bubblesContainer.appendChild(bub);
+  
   const meta = document.createElement('div');
   meta.className = 'bmeta';
   meta.textContent = nowStr();
+  bubblesContainer.appendChild(meta);
   
-  wrap.appendChild(bub);
-  wrap.appendChild(meta);
-  row.appendChild(wrap);
-  return row;
+  group.appendChild(bubblesContainer);
+  return group;
 }
 
 // ── Chat Actions ──────────────────────────────────────────────────────────────
@@ -2052,13 +2068,18 @@ function showVoicePreview() {
 async function sendVoiceMessage() {
   if (!recordedBlob) return;
   
-  // Convert to base64 and send
+  // Convert to base64
   const reader = new FileReader();
   reader.onloadend = async () => {
-    const base64 = reader.result.split(',')[1];
+    const base64 = reader.result;
+    
+    // Show voice bubble immediately on sender's end
+    const mediaRow = createMediaBubble(base64, 'audio/webm', true);
+    appendMsg(mediaRow);
     
     try {
-      // Send to backend
+      // Send to backend (remove data URL prefix for backend)
+      const base64Data = base64.split(',')[1];
       await fetch(`${BACKEND_URL}/api/upload-media`, {
         method: 'POST',
         headers: {
@@ -2067,7 +2088,7 @@ async function sendVoiceMessage() {
         },
         body: JSON.stringify({
           session_id: currentSessionId,
-          file_data: base64,
+          file_data: base64Data,
           file_type: 'audio/webm',
           file_name: 'voice.webm'
         })
@@ -2077,6 +2098,8 @@ async function sendVoiceMessage() {
       closeVoiceRecorder();
     } catch (err) {
       showToast('❌ Failed to send voice message');
+      // Remove the bubble if sending failed
+      mediaRow.remove();
     }
   };
   reader.readAsDataURL(recordedBlob);
