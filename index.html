@@ -166,6 +166,29 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
 .chip.lock{opacity:.5;}
 .chip.lock::after{content:'👑';font-size:9px;margin-left:3px;}
 
+/* Country filter dropdown */
+.country-filter-dropdown{
+  flex:1;padding:6px 10px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;
+  font-size:12.5px;color:var(--text);font-family:inherit;
+  cursor:pointer;transition:border-color .2s,background .2s;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%234a7ea8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 8px center;
+  padding-right:28px;
+}
+.country-filter-dropdown:focus{
+  outline:none;border-color:var(--accent);
+  background:var(--surface);
+}
+.country-filter-dropdown option.vip-option{
+  color:var(--text-dim);
+}
+.country-filter-dropdown.locked{
+  opacity:0.6;
+}
+
 /* rooms */
 .rooms-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px;}
 .room-card{background:var(--surface);border:1px solid var(--border);
@@ -642,18 +665,35 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
           <div class="chip on" onclick="chip(this)">Any</div>
           <div class="chip lock" onclick="openVIP()">Male</div>
           <div class="chip lock" onclick="openVIP()">Female</div>
-          <div class="chip lock" onclick="openVIP()">Non-binary</div>
+          <div class="chip lock" onclick="openVIP()">Other</div>
         </div>
       </div>
       <div class="filt-row">
         <span class="filt-lbl">Country</span>
-        <div class="chips" data-filter="country">
-          <div class="chip on" onclick="chip(this)">Any</div>
-          <div class="chip lock" onclick="openVIP()">USA</div>
-          <div class="chip lock" onclick="openVIP()">India</div>
-          <div class="chip lock" onclick="openVIP()">UK</div>
-          <div class="chip lock" onclick="openVIP()">Europe</div>
-        </div>
+        <select id="country-filter" class="country-filter-dropdown" onchange="updateCountryFilter(this)">
+          <option value="any">Any</option>
+          <option value="usa" class="vip-option">🔒 USA</option>
+          <option value="india" class="vip-option">🔒 India</option>
+          <option value="uk" class="vip-option">🔒 UK</option>
+          <option value="canada" class="vip-option">🔒 Canada</option>
+          <option value="australia" class="vip-option">🔒 Australia</option>
+          <option value="germany" class="vip-option">🔒 Germany</option>
+          <option value="france" class="vip-option">🔒 France</option>
+          <option value="spain" class="vip-option">🔒 Spain</option>
+          <option value="italy" class="vip-option">🔒 Italy</option>
+          <option value="brazil" class="vip-option">🔒 Brazil</option>
+          <option value="mexico" class="vip-option">🔒 Mexico</option>
+          <option value="japan" class="vip-option">🔒 Japan</option>
+          <option value="south_korea" class="vip-option">🔒 South Korea</option>
+          <option value="china" class="vip-option">🔒 China</option>
+          <option value="netherlands" class="vip-option">🔒 Netherlands</option>
+          <option value="belgium" class="vip-option">🔒 Belgium</option>
+          <option value="switzerland" class="vip-option">🔒 Switzerland</option>
+          <option value="sweden" class="vip-option">🔒 Sweden</option>
+          <option value="norway" class="vip-option">🔒 Norway</option>
+          <option value="denmark" class="vip-option">🔒 Denmark</option>
+          <option value="other" class="vip-option">🔒 Other</option>
+        </select>
       </div>
     </div>
     <div class="sec-lbl" style="margin:4px 0 10px">Topic Rooms</div>
@@ -1161,6 +1201,13 @@ async function saveProfileFromLobby() {
     
     if (response.ok) {
       showToast('✅ Profile saved successfully!');
+      // Auto-collapse the profile section after successful save
+      const profileSetup = document.getElementById('profile-setup');
+      const profileToggle = document.getElementById('profile-toggle');
+      if (profileSetup && !profileSetup.classList.contains('collapsed')) {
+        profileSetup.classList.add('collapsed');
+        if (profileToggle) profileToggle.classList.add('collapsed');
+      }
     } else {
       showToast('❌ Failed to save profile');
     }
@@ -1197,6 +1244,20 @@ function chip(el) {
   el.closest('.chips').querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
   el.classList.add('on');
 }
+
+// Handle country filter dropdown changes
+function updateCountryFilter(selectEl) {
+  const selectedValue = selectEl.value;
+  
+  // Check if user is trying to select a VIP-only option
+  if (selectedValue !== 'any' && !isVIP) {
+    // Reset to 'any' and show VIP modal
+    selectEl.value = 'any';
+    openVIP();
+    return;
+  }
+}
+
 function selRoom(el, name) {
   document.querySelectorAll('.room-card').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
@@ -1205,8 +1266,36 @@ function selRoom(el, name) {
 
 // ── Search / Matching ─────────────────────────────────────────────────────────
 function getActiveChip(groupSelector) {
+  // Handle country dropdown separately
+  if (groupSelector === '[data-filter="country"]') {
+    const dropdown = document.getElementById('country-filter');
+    if (dropdown) {
+      return dropdown.value;
+    }
+  }
+  
   const active = document.querySelector(`${groupSelector} .chip.on`);
-  return active ? active.textContent.trim().toLowerCase().replace(/\s+/g, '_') : 'any';
+  if (!active) return 'any';
+  
+  const text = active.textContent.trim().toLowerCase();
+  
+  // Handle gender mapping
+  if (groupSelector === '[data-filter="gender"]') {
+    if (text === 'male') return 'male';
+    if (text === 'female') return 'female';
+    if (text === 'other') return 'other';
+    return 'any';
+  }
+  
+  // Handle age group mapping (fix the dash)
+  if (groupSelector === '[data-filter="age"]') {
+    if (text === '18–24' || text === '18-24') return '18-24';
+    if (text === '25–34' || text === '25-34') return '25-34';
+    if (text === '35+') return '35+';
+    return 'any';
+  }
+  
+  return text.replace(/\s+/g, '_').replace(/–/g, '-');
 }
 
 function startSearch() {
