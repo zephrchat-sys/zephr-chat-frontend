@@ -1500,8 +1500,16 @@ function escapeHtml(text) {
 
 function appendMsg(el) {
   const m = document.getElementById('msgs');
+  const wasAtBottom = m.scrollHeight - m.scrollTop <= m.clientHeight + 50;
   m.appendChild(el);
-  m.scrollTop = m.scrollHeight;
+  
+  // Only auto-scroll if user was already at bottom
+  if (wasAtBottom) {
+    // Use requestAnimationFrame for smoother scrolling
+    requestAnimationFrame(() => {
+      m.scrollTop = m.scrollHeight;
+    });
+  }
 }
 
 function nowStr() {
@@ -1622,9 +1630,6 @@ async function handleFileSelect(event) {
   // Reset input
   event.target.value = '';
   
-  // Debug: Log file info
-  console.log('📁 File selected:', file.name, 'Type:', file.type, 'Size:', file.size);
-  
   // Check file size (max 10MB for images, 20MB for videos)
   const maxSize = file.type.startsWith('video/') ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
   if (file.size > maxSize) {
@@ -1640,8 +1645,8 @@ async function handleFileSelect(event) {
     // Convert file to base64
     const base64 = await fileToBase64(file);
     
-    // Send to backend
-    await fetch(`${BACKEND_URL}/api/upload-media`, {
+    // Send to backend (don't wait for response)
+    fetch(`${BACKEND_URL}/api/upload-media`, {
       method: 'POST',
       headers: {
         'Authorization': `tma ${initData}`,
@@ -1653,10 +1658,29 @@ async function handleFileSelect(event) {
         file_type: file.type,
         file_name: file.name
       })
-    });
+    }).catch(err => console.error('Media upload error:', err));
+    
+    // Create and preload media before showing
+    const mediaRow = createMediaBubble(base64, file.type, true);
+    
+    // Wait for images to load before replacing to prevent layout shift
+    if (file.type.startsWith('image/')) {
+      const img = mediaRow.querySelector('img');
+      if (img) {
+        await new Promise((resolve) => {
+          if (img.complete) {
+            resolve();
+          } else {
+            img.onload = resolve;
+            img.onerror = resolve; // Resolve even on error to not block UI
+            // Timeout after 3 seconds to prevent hanging
+            setTimeout(resolve, 3000);
+          }
+        });
+      }
+    }
     
     // Replace loading with actual media
-    const mediaRow = createMediaBubble(base64, file.type, true);
     loadingRow.replaceWith(mediaRow);
     showToast('✅ Media sent');
     
@@ -1717,9 +1741,6 @@ function createMediaBubble(src, type, isMe) {
   const bub = document.createElement('div');
   bub.className = 'bubble';
   
-  // Debug log
-  console.log('📊 Creating media bubble - Type:', type);
-  
   // Normalize type (handle empty or malformed MIME types)
   const normalizedType = (type || '').toLowerCase();
   
@@ -1745,18 +1766,33 @@ function createMediaBubble(src, type, isMe) {
   // Check if it's an image (including GIF)
   else if (normalizedType.startsWith('image/') || normalizedType.includes('gif')) {
     bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
-    bub.innerHTML = `<img src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" loading="lazy">`;
+    // Create image with fixed dimensions to prevent layout shift
+    const img = document.createElement('img');
+    img.style.cssText = 'width:100%;height:auto;display:block;border-radius:12px;min-height:150px;background:var(--surface3);';
+    img.src = src;
+    // Remove min-height once image loads to show actual size
+    img.onload = function() {
+      this.style.minHeight = 'auto';
+    };
+    bub.appendChild(img);
   } else if (normalizedType.startsWith('video/')) {
     bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
-    bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
+    // Remove autoplay to prevent layout shifts and use poster
+    bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;min-height:150px;" controls loop muted playsinline></video>`;
   } else {
     // Fallback: Try to detect from data URL
     if (src.startsWith('data:image/')) {
       bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
-      bub.innerHTML = `<img src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" loading="lazy">`;
+      const img = document.createElement('img');
+      img.style.cssText = 'width:100%;height:auto;display:block;border-radius:12px;min-height:150px;background:var(--surface3);';
+      img.src = src;
+      img.onload = function() {
+        this.style.minHeight = 'auto';
+      };
+      bub.appendChild(img);
     } else if (src.startsWith('data:video/')) {
       bub.style.cssText = 'padding:0;overflow:hidden;border-radius:12px;max-width:250px;';
-      bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;" controls loop autoplay muted></video>`;
+      bub.innerHTML = `<video src="${src}" style="width:100%;height:auto;display:block;border-radius:12px;min-height:150px;" controls loop muted playsinline></video>`;
     } else if (src.startsWith('data:audio/')) {
       bub.style.cssText = 'padding:8px 12px;border-radius:17px;min-width:180px;';
       const fallbackAudioSrc = src;
@@ -2092,8 +2128,8 @@ async function sendGif(gifUrl) {
       reader.readAsDataURL(blob);
     });
     
-    // Send to backend
-    await fetch(`${BACKEND_URL}/api/upload-media`, {
+    // Send to backend (don't wait)
+    fetch(`${BACKEND_URL}/api/upload-media`, {
       method: 'POST',
       headers: {
         'Authorization': `tma ${initData}`,
@@ -2105,10 +2141,24 @@ async function sendGif(gifUrl) {
         file_type: 'image/gif',
         file_name: 'tenor.gif'
       })
-    });
+    }).catch(err => console.error('GIF upload error:', err));
+    
+    // Create media bubble and wait for image to load
+    const mediaRow = createMediaBubble(base64, 'image/gif', true);
+    const img = mediaRow.querySelector('img');
+    if (img) {
+      await new Promise((resolve) => {
+        if (img.complete) {
+          resolve();
+        } else {
+          img.onload = resolve;
+          img.onerror = resolve;
+          setTimeout(resolve, 3000);
+        }
+      });
+    }
     
     // Replace loading with actual GIF
-    const mediaRow = createMediaBubble(base64, 'image/gif', true);
     loadingRow.replaceWith(mediaRow);
     showToast('✅ GIF sent');
     
