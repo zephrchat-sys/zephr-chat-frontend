@@ -301,8 +301,8 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--text);
   z-index:1000;transform:translateY(-100%);
   transition:transform .3s ease,opacity .3s ease;opacity:0;
   box-shadow:0 4px 12px rgba(0,0,0,0.15);
-  border-bottom:2px solid rgba(255,255,255,0.2);}
-.notif-banner.show{transform:translateY(0);opacity:1;}
+  border-bottom:2px solid rgba(255,255,255,0.2);pointer-events:none;}
+.notif-banner.show{transform:translateY(0);opacity:1;pointer-events:all;}
 .notif-banner.success{background:#10b981;color:#fff;}
 .notif-banner.info{background:#0077b6;color:#fff;}
 .notif-banner.warning{background:#f59e0b;color:#fff;}
