@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zephr Chat — Live Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #111621;
+            --bg-card: #161d2a;
+            --accent-cyan: #00d9ff;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --glow-cyan: rgba(0, 217, 255, 0.4);
+            --glow-purple: rgba(168, 85, 247, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        /* Glowing orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-cyan);
+            top: -100px;
+            left: -100px;
+            animation: float 15s ease-in-out infinite;
+        }
+
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: var(--accent-purple);
+            bottom: -100px;
+            right: -100px;
+            animation: float 18s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(50px, 50px) scale(1.1);
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 400;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--accent-green);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-top: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
+            }
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 10px 40px var(--glow-cyan);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            filter: drop-shadow(0 0 10px currentColor);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: 'Syne', sans-serif;
+            line-height: 1;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-value.updating {
+            animation: countUp 0.5s ease-out;
+        }
+
+        @keyframes countUp {
+            0% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .stat-change {
+            font-size: 0.8rem;
+            color: var(--accent-green);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-change.negative {
+            color: var(--accent-pink);
+        }
+
+        /* Different colors for each card */
+        .stat-card:nth-child(1) .stat-value {
+            color: var(--accent-cyan);
+            text-shadow: 0 0 20px var(--glow-cyan);
+        }
+
+        .stat-card:nth-child(2) .stat-value {
+            color: var(--accent-green);
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .stat-card:nth-child(3) .stat-value {
+            color: var(--accent-purple);
+            text-shadow: 0 0 20px var(--glow-purple);
+        }
+
+        .stat-card:nth-child(4) .stat-value {
+            color: var(--accent-pink);
+            text-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+        }
+
+        .activity-section {
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.6s ease-out 0.5s backwards;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .activity-log {
+            max-height: 300px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-cyan) var(--bg-secondary);
+        }
+
+        .activity-log::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .activity-log::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+        }
+
+        .activity-log::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
+            border-radius: 10px;
+        }
+
+        .activity-item {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideInLeft 0.3s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-text {
+            font-size: 0.9rem;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .refresh-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 217, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+
+        .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--accent-cyan);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error state */
+        .error-message {
+            background: rgba(236, 72, 153, 0.15);
+            border: 1px solid var(--accent-pink);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="container">
+        <header>
+            <h1 class="logo">ZEPHR.CHAT</h1>
+            <p class="subtitle">Live System Monitor</p>
+            <div class="status-badge">SYSTEM OPERATIONAL</div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="totalUsers">---</div>
+                <div class="stat-change" id="totalUsersChange"></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-label">Online Now</div>
+                <div class="stat-value" id="onlineUsers">---</div>
+                <div class="stat-change" id="onlineChange"></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💬</div>
+                <div class="stat-label">Active Chats</div>
+                <div class="stat-value" id="activeChats">---</div>
+                <div class="stat-change" id="chatsChange"></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-label">In Queue</div>
+                <div class="stat-value" id="inQueue">---</div>
+                <div class="stat-change" id="queueChange"></div>
+            </div>
+        </div>
+
+        <div class="activity-section">
+            <h2 class="section-title">
+                <span>📊</span> Recent Activity
+            </h2>
+            <div class="activity-log" id="activityLog">
+                <div class="activity-item">
+                    <span class="activity-text">Monitoring started...</span>
+                    <span class="activity-time" id="startTime">--:--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="refresh-info">
+                <div class="spinner"></div>
+                <span>Auto-refreshing every 3 seconds</span>
+            </div>
+            <div style="margin-top: 20px; opacity: 0.5;">
+                Last updated: <span id="lastUpdate">Never</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = window.location.origin + '/api/stats';
+        const REFRESH_INTERVAL = 3000; // 3 seconds
+        
+        // State tracking
+        let previousStats = {
+            online: 0,
+            active_chats: 0,
+            total_matches: 0,
+            queued: 0
+        };
+
+        let activityLog = [];
+        const MAX_ACTIVITY_ITEMS = 20;
+
+        // Initialize
+        document.getElementById('startTime').textContent = new Date().toLocaleTimeString();
+
+        // Fetch stats from API
+        async function fetchStats() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                updateDashboard(data);
+                updateLastUpdateTime();
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+                showError(error.message);
+            }
+        }
+
+        // Update dashboard with new data
+        function updateDashboard(stats) {
+            // Update values with animation
+            updateStat('onlineUsers', stats.online, previousStats.online, 'onlineChange');
+            updateStat('activeChats', stats.active_chats, previousStats.active_chats, 'chatsChange');
+            updateStat('inQueue', stats.queued, previousStats.queued, 'queueChange');
+            
+            // Total matches = cumulative metric
+            updateStat('totalUsers', stats.total_matches, previousStats.total_matches, 'totalUsersChange', true);
+
+            // Log significant changes
+            logActivity(stats, previousStats);
+
+            // Update previous stats
+            previousStats = { ...stats };
+        }
+
+        // Update individual stat with change indicator
+        function updateStat(elementId, newValue, oldValue, changeId, isCumulative = false) {
+            const element = document.getElementById(elementId);
+            const changeElement = document.getElementById(changeId);
+            
+            if (element.textContent === '---' || newValue !== oldValue) {
+                element.textContent = newValue.toLocaleString();
+                element.classList.add('updating');
+                setTimeout(() => element.classList.remove('updating'), 500);
+
+                // Show change indicator
+                if (oldValue !== 0 && newValue !== oldValue) {
+                    const change = newValue - oldValue;
+                    const changeText = change > 0 ? `+${change}` : change;
+                    changeElement.textContent = changeText;
+                    changeElement.className = 'stat-change ' + (change > 0 ? '' : 'negative');
+                    
+                    // Fade out change indicator after 3 seconds
+                    setTimeout(() => {
+                        changeElement.style.opacity = '0';
+                    }, 3000);
+                    setTimeout(() => {
+                        changeElement.textContent = '';
+                        changeElement.style.opacity = '1';
+                    }, 3500);
+                }
+            }
+        }
+
+        // Log activity
+        function logActivity(newStats, oldStats) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            
+            // Check for new matches
+            if (newStats.total_matches > oldStats.total_matches) {
+                const count = newStats.total_matches - oldStats.total_matches;
+                addActivityItem(`🎉 ${count} new ${count === 1 ? 'match' : 'matches'} made!`, timeStr);
+            }
+
+            // Check for users going online
+            if (newStats.online > oldStats.online) {
+                const count = newStats.online - oldStats.online;
+                addActivityItem(`✨ ${count} ${count === 1 ? 'user' : 'users'} came online`, timeStr);
+            }
+
+            // Check for users going offline
+            if (newStats.online < oldStats.online) {
+                const count = oldStats.online - newStats.online;
+                addActivityItem(`👋 ${count} ${count === 1 ? 'user' : 'users'} went offline`, timeStr);
+            }
+
+            // Check for new active chats
+            if (newStats.active_chats > oldStats.active_chats) {
+                const count = newStats.active_chats - oldStats.active_chats;
+                addActivityItem(`💬 ${count} new ${count === 1 ? 'chat' : 'chats'} started`, timeStr);
+            }
+
+            // Check for chats ending
+            if (newStats.active_chats < oldStats.active_chats) {
+                const count = oldStats.active_chats - newStats.active_chats;
+                addActivityItem(`📭 ${count} ${count === 1 ? 'chat' : 'chats'} ended`, timeStr);
+            }
+
+            // Queue changes
+            if (newStats.queued > oldStats.queued) {
+                const count = newStats.queued - oldStats.queued;
+                addActivityItem(`⏳ ${count} ${count === 1 ? 'user' : 'users'} joined queue`, timeStr);
+            }
+        }
+
+        // Add activity item to log
+        function addActivityItem(text, time) {
+            const logElement = document.getElementById('activityLog');
+            
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <span class="activity-text">${text}</span>
+                <span class="activity-time">${time}</span>
+            `;
+            
+            // Insert at the top
+            if (logElement.firstChild) {
+                logElement.insertBefore(item, logElement.firstChild);
+            } else {
+                logElement.appendChild(item);
+            }
+
+            // Remove old items if exceeding max
+            while (logElement.children.length > MAX_ACTIVITY_ITEMS) {
+                logElement.removeChild(logElement.lastChild);
+            }
+        }
+
+        // Update last update time
+        function updateLastUpdateTime() {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Show error
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `⚠️ Connection error: ${message}`;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(errorDiv, container.querySelector('.stats-grid'));
+            
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // Start polling
+        fetchStats(); // Initial fetch
+        setInterval(fetchStats, REFRESH_INTERVAL);
+    </script>
+</body>
+</html>
